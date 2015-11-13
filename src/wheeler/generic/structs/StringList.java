@@ -63,7 +63,7 @@ public class StringList implements IStringList {
     public String[] getArray(int size){return getArray(size, 0);}
     public String[] getArray(int size, int offset){
         // Create and populate an array of appropriate size
-        String[] result = new String[LogicHandler.min(size, length())];
+        String[] result = new String[LogicHandler.min(size, length() - offset)];
         StringNode node = listHeader.next;
         for(int i = 0; i < offset; i++) node = node.next;
         for(int i = 0; i < result.length; i++){
@@ -184,6 +184,24 @@ public class StringList implements IStringList {
         }
         
         return this;
+    }
+    
+    
+    // Add a string to the end of the list if it isn't already in the list
+    public boolean addUnique(String str){
+        // Prevent nulls
+        if (str == null) throw new NullPointerException();
+        
+        // Look for the string
+        StringNode node = listHeader;
+        while(node.next != null){
+            if (StringHandler.areEqual(node.next.value, str, false)) return false;
+            node = node.next;
+        }
+        
+        // Didn't find it, add it
+        node.next = new StringNode(str);
+        return true;
     }
     
     
@@ -410,6 +428,11 @@ public class StringList implements IStringList {
     @Override
     public StringNode getHeader(){
         return listHeader;
+    }
+    
+    // Drop the list to make it empty
+    public void clear(){
+        listHeader.next = null;
     }
 
     @Override
