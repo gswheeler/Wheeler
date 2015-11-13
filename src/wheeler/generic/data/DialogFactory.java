@@ -105,7 +105,7 @@ public class DialogFactory {
      * @param message Human-readable message explaining what threw the exception or where it was caught
      * @param e The exception to print (exception type, failure message, stacktrace)
      * @param traceLevel 1 for relevant, 0 for none, -1 for FULL
-     * @param indirection zero if errorMsg is called directly from the catch block
+     * @param indirection number of nested calls between the catch block and the call to this function (zero if called directly from the catch block, negatives don't work)
      */
     public static void errorMsg(JFrame caller, String message, Exception e, int traceLevel, int indirection){
         message(caller, message + "\n" + LogicHandler.exToString(e, traceLevel, 1 + indirection));

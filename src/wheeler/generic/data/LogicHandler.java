@@ -343,7 +343,7 @@ public class LogicHandler extends BaseHandler {
     /**Convert an Exception into a String that actually has a stacktrace
      * @param e The exception we're converting to a string
      * @param traceLevel 1 for relevant, 0 for none, -1 for FULL
-     * @param indirection zero if exToString is called directly from the catch block
+     * @param indirection number of nested calls between the catch block and the call to this function (zero if called directly from the catch block, negatives don't work)
      * @return 
      */
     public static String exToString(Exception e, int traceLevel, int indirection){
@@ -400,7 +400,7 @@ public class LogicHandler extends BaseHandler {
     
     
     // Get the method that called this function
-    // Use zero for indirection to get the function that calls this one
+    // For indirection, use zero to get the function that calls this one, otherwise 1 for every call "layer" above it
     public static String getCallingMethod(int indirection) throws Exception{
         StackTraceElement[] ste = Thread.currentThread().getStackTrace();
         StackTraceElement element = ste[2 + indirection];
