@@ -131,6 +131,14 @@ public class StringHandler {
     }
     
     
+    // Remove a specified string from the start of a string if it starts with it (only trims once)
+    public static String trimLeadIfPresent(String str, String lead){
+        return (str.toLowerCase().startsWith(lead.toLowerCase()))
+                ? str.substring(lead.length())
+                : str;
+    }
+    
+    
     // Remove characters from the start and end of a string
     public static String trimWhitespace(String subject){
         return trim(subject, whitespaceChars);
