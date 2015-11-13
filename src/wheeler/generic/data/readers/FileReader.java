@@ -79,6 +79,14 @@ public class FileReader {
         String line = readLine(false);
         return (line != null) ? line.trim() : null;
     }
+    public String readContentLine(boolean trimNewlines) throws Exception{
+        String line = "";
+        while(line.length() < 1){
+            line = readLine(trimNewlines);
+            if (line == null) return null;
+        }
+        return line;
+    }
     
     public int readChar() throws Exception{
         if (closed) return -1;
