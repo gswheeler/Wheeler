@@ -45,7 +45,7 @@ public class TimeHandler {
      * @param format The string that will determine the format of the string returned
      * @return What else?
      */
-    public static String getString(String format){
+    public static String getTimestamp(String format){
         return DateTime.now().toString(format);
     }
     

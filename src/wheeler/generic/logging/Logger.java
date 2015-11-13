@@ -103,7 +103,7 @@ public class Logger {
         FileHandler.appendToFile(composeLogLine(type, msg), true, composeLogfilePath(""));
     }
     private static String composeLogLine(String type, String msg){
-        return TimeHandler.getString("hh:mm:ss.zzz") + " " + type + " " + msg;
+        return TimeHandler.getTimestamp("hh:mm:ss.zzz") + " " + type + " " + msg;
     }
     
     
@@ -117,7 +117,7 @@ public class Logger {
     
     private static void checkLogDates() throws Exception{
         // If the last date is null or up-to-date, nothing to do
-        String nowDate = TimeHandler.getString("yyyyMMdd");
+        String nowDate = TimeHandler.getTimestamp("yyyyMMdd");
         String currFile = composeLogfilePath("");
         if(lastWriteTag == null){
             FileHandler.writeToFile(nowDate, getLastWriteFile());
