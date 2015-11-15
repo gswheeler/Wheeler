@@ -311,6 +311,8 @@ public class FileHandler extends BaseHandler {
             throw new Exception("The source file \"" + srcPath + "\" does not exist");
         if (!overwriteExisting && fileExists(dstPath))
             throw new Exception("The destination file \"" + dstPath + "\" already exists");
+        if (!folderExists(getParentFolder(dstPath)))
+            throw new Exception("The parent folder for the destination file \"" + dstPath + "\" does not exist");
         
         // Perform copy
         if (overwriteExisting)
@@ -341,6 +343,8 @@ public class FileHandler extends BaseHandler {
             throw new Exception("The source folder \"" + srcPath + "\" does not exist");
         if (!overwriteExisting && folderExists(dstPath))
             throw new Exception("The destination folder \"" + dstPath + "\" already exists");
+        if (!folderExists(getParentFolder(dstPath)))
+            throw new Exception("The parent folder for the destination folder \"" + dstPath + "\" does not exist");
         
         // Perform copy, recursively
         //   Create the containing folder
