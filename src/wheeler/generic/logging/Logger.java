@@ -34,7 +34,7 @@ public class Logger {
         }
         
         // Make sure the path is valid
-        FileHandler.ensureDirectoryExists(logFolder);
+        FileHandler.ensureFolderExists(logFolder);
         logDir = logFolder;
         logName = baseName;
         

@@ -25,8 +25,8 @@ import wheeler.generic.structs.StringList;
 import wheeler.generic.structs.StringSimpleList;
 
 /**
- *
- * @author Greg
+ * Contains static methods used to handle file I/O operations.
+ * By using the functions in this class, most projects should not have any need to import something under java.io.
  */
 public class FileHandler extends BaseHandler {
     
@@ -37,22 +37,14 @@ public class FileHandler extends BaseHandler {
     
     /// Variables ///
     
-    //public static int driveIdMedia = 150986;
-    //public static String driveNameMedia = "HP Personal Media Drive";
-    //public static int driveIdStorage = 344720;
-    //public static String driveNameStorage = "HP Storage Drive";
-    
     public static boolean forceFilesToBeInOrder = false;
     public static boolean forceFoldersToBeInOrder = false;
     public static boolean forceAllFilesToBeInOrder = false;
     public static boolean excludeSymbolicLinks = false;
     public static boolean printablePathsOnly = false;
     
-    public static IStringList requiredFolders = new StringSimpleList();
-    public static IStringList requiredFiles = new StringSimpleList();
-    
-    public static IStringList transientFiles = new StringSimpleList();
-    public static IStringList transientFolders = new StringSimpleList();
+    public static long deleteRetryInterval = 4*1000;
+    public static int deleteDefaultTimeout = 10;
     
     protected static String wheelerFolder = "C:\\Program Files\\Wheeler";
     private static String wheelerDataFolder(){ return composeFilepath(wheelerFolder, "data"); }
@@ -62,50 +54,31 @@ public class FileHandler extends BaseHandler {
     
     /// Functions ///
     
-    // Initial setup for a file structure: make sure the program folders exist
-    protected static boolean initializeInternal(JFrame caller){
-        try{
-            initializeWithErrorInternal();
+    // Since we generally work within Program Files, need to make sure we have a folder with the right permissions
+    protected static boolean testProgramFolder(String programFolder, JFrame caller) throws Exception{
+        while(true){
+            try{
+                String path = programFolder;
+                ensureFolderExists(path);
+                path = composeFilepath(path, "test.txt");
+                String text = "Permissions test";
+                writeToFile(text, path);
+                if (!readFile(path, false, false).equals(new StringList(text)))
+                    throw new Exception("Did not read/write the correct file data");
+                deleteFile(path);
+                return true;
+            }
+            catch(Exception e){
+                if (caller == null) throw e;
+                String message = "Failed to access/create our folder under\n" + getParentFolder(programFolder);
+                message += "\n\nPlease make sure the folder exists and your";
+                message += "  user account has Full Control under Security/Permissions";
+                message += "\n\nException details: " + LogicHandler.exToString(e, 1, 0);
+                String[] options = {"Try again", "Close program"};
+                if (0 != DialogFactory.customOption(caller, options, message, programFolder)) return false;
+            }
         }
-        catch(Exception e){
-            DialogFactory.errorMsg(caller, "An error occurred while initializing the file structure:", e, 1, 0);
-            return false;
-        }
-        return true;
-    }
-    protected static void initializeWithErrorInternal() throws Exception{
-        initialize(requiredFolders.toArray(), requiredFiles.toArray());
-    }
-    private static void initialize(String[] folders, String[] files) throws Exception{
-        for(int i = 0; i < folders.length; i++){
-            ensureDirectoryExists(folders[i]);
-        }
-        for(int i = 0; i < files.length; i++){
-            ensureFileExists(files[i]);
-        }
-    }
-    
-    // Post-execution cleanup
-    protected static boolean teardownInternal(JFrame caller){
-        try{
-            teardownWithErrorInternal();
-        }
-        catch(Exception e){
-            DialogFactory.errorMsg(caller, "An error occurred while tearing down the file structure:", e, 1, 0);
-            return false;
-        }
-        return true;
-    }
-    protected static void teardownWithErrorInternal() throws Exception{
-        teardown(transientFolders.toArray(), transientFiles.toArray());
-    }
-    private static void teardown(String[] folders, String[] files) throws Exception{
-        for(int i = 0; i < files.length; i++){
-            deleteFile(files[i]);
-        }
-        for(int i = 0; i < folders.length; i++){
-            deleteFolder(folders[i]);
-        }
+        
     }
     
     
@@ -124,12 +97,12 @@ public class FileHandler extends BaseHandler {
         if (!folderExists(path)) throw new Exception("\"" + path + "\" is not a valid folder path");
         String[] contents = getContents(path);
         StringSimpleList collection = new StringSimpleList();
-        for(int i = 0; i < contents.length; i++){
-            if(fileExists(contents[i])){
-                collection.add(contents[i]);
+        for(String dir : contents){
+            if(fileExists(dir)){
+                collection.add(dir);
             }
-            if(folderExists(contents[i])){
-                collection.add(getFilesRecursive(contents[i]));
+            if(folderExists(dir)){
+                collection.add(getFilesRecursive(dir));
             }
         }
         return collection.toArray();
@@ -151,10 +124,10 @@ public class FileHandler extends BaseHandler {
         if (!folderExists(path)) throw new Exception("\"" + path + "\" is not a valid folder path");
         String[] subfolders = getSubfolders(path);
         StringSimpleList collection = new StringSimpleList();
-        for(int i = 0; i < subfolders.length; i++){
-            if(folderExists(subfolders[i])){
-                collection.add(subfolders[i]);
-                collection.add(getSubfoldersRecursive(subfolders[i]));
+        for(String subfolder : subfolders){
+            if(folderExists(subfolder)){
+                collection.add(subfolder);
+                collection.add(getSubfoldersRecursive(subfolder));
             }
         }
         return collection.toArray();
@@ -209,9 +182,9 @@ public class FileHandler extends BaseHandler {
     // Is the provided path a root?
     public static boolean isRoot(String path){
         String[] roots = getRoots();
-        for (int i = 0; i < roots.length; i++)
+        for (String root : roots)
             if (StringHandler.trimTrailingCharacters(path, "\\").equalsIgnoreCase(
-                    StringHandler.trimTrailingCharacters(roots[i], "\\"))
+                    StringHandler.trimTrailingCharacters(root, "\\"))
                 ) return true;
         return false;
     }
@@ -223,42 +196,24 @@ public class FileHandler extends BaseHandler {
     }
     
     
-    // Get drives registered with our drive IDs (stored in a root-level file named !driveId.gsw)
-    /*public static String[] getRegisteredDrives(boolean includeSpace, boolean includeName){
-        String[] roots = getRoots();
-        StringList drives = new StringList();
-        for (int i = 0; i < roots.length; i++){
-            String regPath = composeFilepath(roots[i], "!driveId.gsw");
-            if (fileExists(regPath)){
-                try{
-                    String driveSpace = getSpaceUsableOfTotal(roots[i]);
-                    String driveName = driveIdToName(Integer.valueOf(readFile(regPath,true,false).pullFirst()));
-                    if (driveName != null) drives.add(
-                            roots[i]
-                                + ((includeSpace) ? "\t(" + driveSpace + ")" : "")
-                                + ((includeName) ? "\t" + driveName : "")
-                        );
-                }
-                catch(Exception e){
-                    //System.out.println("FileHandler.getRegisteredDrives: " + e.toString());
-                }
-            }
-        }
-        return drives.toArray();
-    }*/
-    private static String getSpaceUsableOfTotal(String path){
-        File drive = new File((path.indexOf(":") != -1)
-                ? path.substring(0, path.indexOf(":") + 1)
-                : path);
-        long usable = drive.getUsableSpace();
-        long total = drive.getTotalSpace();
-        return StringHandler.toReadableFileSize(usable) + " free of " + StringHandler.toReadableFileSize(total);
+    public static long getUsableSpaceOnDrive(String path){
+        File drive = new File(
+                (StringHandler.contains(path, ":"))
+                    ? path.substring(0, path.indexOf(":") + 1)
+                    : path
+            );
+        return drive.getUsableSpace();
     }
-    /*private static String driveIdToName(int id){
-        if (id == driveIdMedia) return driveNameMedia;
-        if (id == driveIdStorage) return driveNameStorage;
-        return null;
-    }*/
+    
+    
+    public static long getTotalSpaceOnDrive(String path){
+        File drive = new File(
+                (StringHandler.contains(path, ":"))
+                    ? path.substring(0, path.indexOf(":") + 1)
+                    : path
+            );
+        return drive.getTotalSpace();
+    }
     
     
     // Rename a file. Make sure the two files are in the same folder
@@ -266,7 +221,7 @@ public class FileHandler extends BaseHandler {
         File src = new File(path);
         if (!fileExists(path)) throw new Exception("The file \"" + path + "\" does not exist");
         File dst = new File(src.getParentFile().getPath() + "\\" + name);
-        if (name.indexOf("\\") != -1) throw new Exception("Rename does not allow directory changes");
+        if (StringHandler.contains(name, "\\")) throw new Exception("Rename does not allow directory changes");
         if (fileExists(dst.getPath())) throw new Exception("The file \"" + dst.getPath() + "\" already exists");
         Files.move(src.toPath(), dst.toPath());
     }
@@ -277,7 +232,7 @@ public class FileHandler extends BaseHandler {
         File src = new File(path);
         if (!folderExists(path)) throw new Exception("The directory \"" + path + "\" does not exist");
         File dst = new File(src.getParentFile().getPath() + "\\" + name);
-        if (name.indexOf("\\") != -1) throw new Exception("Rename does not allow directory changes");
+        if (StringHandler.contains(name, "\\")) throw new Exception("Rename does not allow directory changes");
         if (folderExists(dst.getPath())) throw new Exception("The directory \"" + dst.getPath() + "\" already exists");
         Files.move(src.toPath(), dst.toPath());
     }
@@ -352,16 +307,16 @@ public class FileHandler extends BaseHandler {
         //   Copy over any subfolders and any files they contain
         createFolder(dstPath);
         String[] subfiles = getFiles(srcPath);
-        for(int i = 0; i < subfiles.length; i++){
-            String filename = getFileName(subfiles[i]);
+        for(String subfile : subfiles){
+            String filename = getFileName(subfile);
             String newPath = composeFilepath(dstPath, filename);
-            copyFile(subfiles[i], newPath, overwriteExisting);
+            copyFile(subfile, newPath, overwriteExisting);
         }
         String[] subfolders = getSubfolders(srcPath);
-        for(int i = 0; i < subfolders.length; i++){
-            String filename = getFileName(subfolders[i]);
+        for(String subfolder : subfolders){
+            String filename = getFileName(subfolder);
             String newPath = composeFilepath(dstPath, filename);
-            copyFolderWithContents(subfolders[i], newPath, overwriteExisting);
+            copyFolderWithContents(subfolder, newPath, overwriteExisting);
         }
     }
     
@@ -382,7 +337,12 @@ public class FileHandler extends BaseHandler {
     
     // Make sure the file exists, populated or otherwise
     public static boolean ensureFileExists(String path) throws Exception{
-        ensureDirectoryExists(getParentFolder(path));
+        try{
+            ensureFolderExists(getParentFolder(path));
+        }
+        catch(Exception e){
+            throw new Exception("Failed to create the parent folder for file \"" + path + "\"", e);
+        }
         if(!fileExists(path)){
             writeToFile("", path);
             waitForFile(path, 10);
@@ -391,13 +351,33 @@ public class FileHandler extends BaseHandler {
         return true;
     }
     
-    public static void waitForFile(String path, long timeout) throws Exception{
-        if (!(timeout > 0)) timeout = 60;
-        long deadline = TimeHandler.ticks() + (timeout * 1000);
+    /**
+     * Wait for a file to be created. Does not create the file.
+     * @param path The file to wait for
+     * @param timeoutSeconds Length of time to wait in seconds (zero for no timeout)
+     * @throws Exception if the specified timeout period elapses before the file is found
+     */
+    public static void waitForFile(String path, long timeoutSeconds) throws Exception{
+        long deadline = TimeHandler.ticks() + (timeoutSeconds * 1000);
         while(!FileHandler.fileExists(path)){
-            if (TimeHandler.ticks() > deadline)
-                throw new Exception("File \"" + path + "\" failed to be created within " + timeout + " seconds");
-            sleep(20);
+            if ((timeoutSeconds > 0) && (TimeHandler.ticks() > deadline))
+                throw new Exception("File \"" + path + "\" failed to be created within " + timeoutSeconds + " seconds");
+            LogicHandler.sleep(20);
+        }
+    }
+    
+    /**
+     * Wait for a file to be deleted. Does not delete the file.
+     * @param path The file to wait on
+     * @param timeoutSeconds Length of time to wait in seconds (zero for no timeout)
+     * @throws Exception if the specified timeout period elapses before the file is no longer found
+     */
+    public static void waitForFileDelete(String path, long timeoutSeconds) throws Exception{
+        long deadline = TimeHandler.ticks() + (timeoutSeconds * 1000);
+        while(FileHandler.fileExists(path)){
+            if((timeoutSeconds > 0) && (TimeHandler.ticks() > deadline))
+                throw new Exception("File \"" + path + "\" failed to be deleted within " + timeoutSeconds + " seconds");
+            LogicHandler.sleep(20);
         }
     }
     
@@ -410,170 +390,223 @@ public class FileHandler extends BaseHandler {
         if (!folderExists(getParentFolder(path)))
             throw new Exception("The destination folder for new folder \"" + path + "\" does not exist");
         Files.createDirectory(new File(path).toPath());
-        //fileObject(path).mkdir();
-        long deadline = System.currentTimeMillis() + 10000;
+        long deadline = TimeHandler.ticks() + (10*1000);
         while (!folderExists(path))
-            if (System.currentTimeMillis() > deadline)
+            if (TimeHandler.ticks() > deadline)
                 throw new Exception("Failed to create folder \"" + path + "\"");
             else
-                try{Thread.sleep(5);}catch(Exception e){}
+                LogicHandler.sleep(5);
         return true;
     }
     
     
     // Make a folder exist, including the creation of parent folders if necessary
-    public static boolean ensureDirectoryExists(String path) throws Exception{
+    public static boolean ensureFolderExists(String path) throws Exception{
+        // If the folder exists, don't have to create anything
         if (folderExists(path)) return true;
+        
+        // Make sure the parent exists first
+        StringSimpleList parentsToCreate = new StringSimpleList();
         String parent = getParentFolder(path);
-        if (!folderExists(parent)) ensureDirectoryExists(parent);
-        createFolder(path);
+        while((parent != null) && !folderExists(parent)){
+            parentsToCreate.add(parent);
+            parent = getParentFolder(parent);
+        }
+        // At this point, parent will be the uppermost existing parent or null if the path's root is non-existant
+        if (parent == null)
+            throw new Exception("Failed to find an existing parent folder for folder \"" + path + "\"");
+        while(parentsToCreate.any()){
+            createFolder(parentsToCreate.pullLast());
+        }
         return false;
     }
-    /*public static boolean makeDir(String path) throws Exception { return createDirectory(path); }
-    public static boolean mkDir(String path) throws Exception { return makeDir(path); }*/
     
     
-    // Make a set of folders exist; use to create an entire tree if desired
-    /*public static void createDirectories(String[] paths) throws Exception{
-        for(int i = 0; i < paths.length; i++)
-            createDirectory(paths[i]);
-    }
-    public static void makeDirs(String[] paths) throws Exception { createDirectories(paths); }
-    public static void mkDirs(String[] paths) throws Exception { makeDirs(paths); }*/
-    
-    
-    // Delete a folder's contents (including subfolders), then delete the folder itself
-    // Timeout in seconds. -1 for no timeout, 0 for one-chance-only
-    public static boolean deleteFile(String path) throws Exception { return deleteFile(path, 60); }
+    // Delete a file. Timeout in seconds; zero for no timeout
+    public static boolean deleteFile(String path) throws Exception { return deleteFile(path, deleteDefaultTimeout); }
     public static boolean deleteFile(String path, int timeoutSeconds) throws Exception {
         String[] paths = {path}; return deleteFiles(paths, timeoutSeconds);
     }
-    public static boolean deleteFiles(String[] paths) throws Exception { return deleteFiles(paths, 120); }
+    public static boolean deleteFiles(String[] paths) throws Exception { return deleteFiles(paths, deleteDefaultTimeout); }
     public static boolean deleteFiles(String[] paths, int timeoutSeconds) throws Exception {
         // Delete the files
         boolean somethingWasDeleted = false;
-        for(int i = 0; i < paths.length; i++){
-            if (!fileExists(paths[i])) continue;
-            fileObject(paths[i]).delete();
+        for(String filepath : paths){
+            if (!fileExists(filepath)) continue;
+            fileObject(filepath).delete();
             somethingWasDeleted = true;
         }
         if (!somethingWasDeleted) return false;
-        // Make the files got deleted
-        long timeoutTime = System.currentTimeMillis() + (timeoutSeconds * 1000);
-        String existingFile = "";
-        long retryInterval = (4*1000);
-        long deleteTime = TimeHandler.ticks() + retryInterval;
-        while(System.currentTimeMillis() < timeoutTime){
-            sleep(5);
-            existingFile = null;
+        
+        // Make sure the files got deleted
+        long deadline = TimeHandler.ticks() + (timeoutSeconds * 1000);
+        long deleteTime = TimeHandler.ticks() + deleteRetryInterval;
+        while(true){
+            String existingFile = null;
             boolean deleting = deleteTime > TimeHandler.ticks();
-            for(int i = 0; i < paths.length; i++){
-                if(fileExists(paths[i])){
-                    if (existingFile == null) existingFile = paths[i];
-                    if (deleting) fileObject(paths[i]).delete();
+            
+            // Look for existing files; if we're deleting this time around, delete
+            for(String filepath : paths){
+                if(fileExists(filepath)){
+                    if (existingFile == null) existingFile = filepath;
+                    if (deleting) fileObject(filepath).delete();
                 }
             }
             if (existingFile == null) return true;
-            if (deleting) deleteTime += retryInterval;
+            
+            // If we deleted this time around, advance the count. Otherwise, make sure we haven't run out of time
+            if(deleting){
+                deleteTime += deleteRetryInterval;
+            }else if((timeoutSeconds > 0) && (TimeHandler.ticks() > deadline)){
+                throw new Exception("Failed to delete file \"" + existingFile + "\" within " + timeoutSeconds + " seconds");
+            }
+            LogicHandler.sleep(5);
         }
-        throw new Exception("Failed to delete file \"" + existingFile + "\" within " + timeoutSeconds + " seconds");
     }
     
     
     // Delete a folder's contents (including subfolders), then delete the folder itself
-    // Timeout in seconds. -1 for no timeout, 0 for one-chance-only
-    public static boolean deleteFolders(String[] paths) throws Exception { return deleteFolders(paths, 60); }
+    // Timeout in seconds; zero for no timeout
+    public static boolean deleteFolders(String[] paths) throws Exception { return deleteFolders(paths, deleteDefaultTimeout); }
     public static boolean deleteFolders(String[] paths, int timeoutSeconds) throws Exception {
         boolean anyDeleted = false;
-        for (int i = 0; i < paths.length; i++) if (deleteFolder(paths[i], timeoutSeconds)) anyDeleted = true;
+        for (String folder : paths) if (deleteFolder(folder, timeoutSeconds)) anyDeleted = true;
         return anyDeleted;
     }
-    public static boolean deleteFolder(String path) throws Exception { return deleteFolder(path, 60); }
+    public static boolean deleteFolder(String path) throws Exception { return deleteFolder(path, deleteDefaultTimeout); }
     public static boolean deleteFolder(String path, int timeoutSeconds) throws Exception {
         // Check if it doesn't exist
         if (!folderExists(path)) return false;
         // If this is a symbolic link, only delete the LINK
         if(isSymbolicLink(path)){
-            new File(path).delete();
+            fileObject(path).delete();
             return true;
         }
-        // Delete all files in this folder
-        String[] files = getFiles(path);
-        for(int i = 0; i < files.length; i++){ deleteFile(files[i], timeoutSeconds); }
-        // Recursively delete all subfolders
-        String[] folders = getSubfolders(path);
-        for(int i = 0; i < folders.length; i++){ deleteFolder(folders[i], timeoutSeconds); }
-        // Make sure everything got deleted
-        long timeoutTime = System.currentTimeMillis() + (timeoutSeconds * 1000);
-        String[] existingFiles;
-        while((existingFiles = getContents(path)).length > 0){
-            if(System.currentTimeMillis() > timeoutTime)
-                throw new Exception("Failed to delete file/folder \"" + existingFiles[0] + "\" within " + timeoutSeconds + " seconds");
-            Thread.sleep(5);
-        }
-        // Delete this folder
-        new File(path).delete();
+        
+        // Clear away everything in the folder
+        clearFolder(path);
+        
+        // Delete the folder itself
+        fileObject(path).delete();
+        long deleteTime = TimeHandler.ticks() + deleteRetryInterval;
+        long deadline = TimeHandler.ticks() + (timeoutSeconds * 1000);
         while(folderExists(path)){
-            if(System.currentTimeMillis() > timeoutTime)
+            if((timeoutSeconds > 0) && (TimeHandler.ticks() > deadline))
                 throw new Exception("Failed to delete folder \"" + path + "\" within " + timeoutSeconds + " seconds");
-            Thread.sleep(5);
+            if(TimeHandler.ticks() > deleteTime){
+                fileObject(path).delete();
+                deleteTime += deleteRetryInterval;
+            }
+            LogicHandler.sleep(5);
         }
         return true;
     }
     
     
+    // Delete whatever may exist at the current directory
+    public static boolean deleteDirectories(String[] paths) throws Exception { return deleteDirectories(paths, deleteDefaultTimeout); }
+    public static boolean deleteDirectories(String[] paths, int timeoutSeconds) throws Exception {
+        boolean anyDeleted = false;
+        for (String folder : paths) if (deleteDirectory(folder, timeoutSeconds)) anyDeleted = true;
+        return anyDeleted;
+    }
+    public static boolean deleteDirectory(String path) throws Exception{ return deleteDirectory(path, deleteDefaultTimeout); }
+    public static boolean deleteDirectory(String path, int timeoutSeconds) throws Exception{
+        // If there's nothing there, don't bother
+        if (!directoryExists(path)) return false;
+        
+        // Delete it, whatever it may be
+        if(fileExists(path)){
+            // It's a file; delete it
+            deleteFile(path, timeoutSeconds);
+        }else if(folderExists(path)){
+            // It's a folder; delete it and anything inside it
+            deleteFolder(path, timeoutSeconds);
+        }else{
+            // It's SOMETHING; just issue a delete command
+            fileObject(path).delete();
+            long deleteTime = TimeHandler.ticks() + deleteRetryInterval;
+            long deadline = TimeHandler.ticks() + (timeoutSeconds * 1000);
+            while(directoryExists(path)){
+                if((timeoutSeconds > 0) && (TimeHandler.ticks() > deadline))
+                    throw new Exception("Failed to delete directory \"" + path + "\" within " + timeoutSeconds + " seconds");
+                if(TimeHandler.ticks() > deleteTime){
+                    fileObject(path).delete();
+                    deleteTime += deleteRetryInterval;
+                }
+            }
+        }
+        return true;
+    }
+    
     // Delete the contents of a folder
-    public static void clearFolder(String path) throws Exception{
+    public static void clearFolder(String path) throws Exception{ clearFolder(path, deleteDefaultTimeout); }
+    public static void clearFolder(String path, int timeoutSeconds) throws Exception{
         if (!folderExists(path)) throw new Exception("The folder \"" + path + "\" does not exist");
-        String[] contents = getFiles(path);
-        for (int i = 0; i < contents.length; i++) deleteFile(contents[i]);
-        contents = getSubfolders(path);
-        for (int i = 0; i < contents.length; i++) deleteFolder(contents[i]);
+        // Recursively delete all subfolders
+        deleteFolders(getSubfolders(path), timeoutSeconds);
+        // Delete all files in this folder
+        deleteFiles(getFiles(path), timeoutSeconds);
+        // If there's anything left, handle as appropriate
+        deleteDirectories(getContents(path), timeoutSeconds);
     }
     
     
-    // Check if a file exists
+    /**
+     * Check if a file exists
+     * @param path The path being checked
+     * @return True if a file exists at the specified path
+     */
     public static boolean fileExists(String path){
         return new File(path).isFile();
-        /*try{
-            String[] subfiles = getFiles(getFileParent(path));
-            for (int i = 0; i < subfiles.length; i++)
-                if (path.equalsIgnoreCase(subfiles[i]))
-                    return new File(path).isFile();
-            return false;
-        }
-        catch(Exception e){
-            return false;
-        }*/
     }
     
     
-    // Check if a folder exists
+    /**
+     * Check if a (valid) folder exists
+     * @param path The path being checked
+     * @return True if a valid folder exists at the specified path (it exists, is a folder, and can hold subitems)
+     */
     public static boolean folderExists(String path){
-        File file = fileObject(path); return file.isDirectory() && (file.listFiles() != null);
-        //return new File(path).isDirectory();
-        /*try{
-            if (isRoot(path)) return true;
-            String[] subfolders = getSubfolders(getFileParent(path));
-            for (int i = 0; i < subfolders.length; i++)
-                if (path.equalsIgnoreCase(subfolders[i]))
-                    return new File(path).isDirectory();
+        File file = fileObject(path);
+        
+        // If the filesystem says it isn't a folder, believe it
+        if (!file.isDirectory()) return false;
+        
+        // If the folder can't have subitems, it isn't a usable folder
+        if(file.listFiles() == null){
+            Logger.warn("FileHandler.folderExists", "Unusable folder detected: " + path);
             return false;
         }
-        catch(Exception e){
-            return false;
-        }*/
+        
+        // All checks passed; it is a usable folder
+        return true;
     }
     
     
-    // Check if there is anything there (at all)
-    // Protected so we don't get confused with folderExists
-    protected static boolean directoryExists(String path) throws Exception{
+    /**
+     * Check if there is anything there at all
+     * @param path The path being checked
+     * @return True if anything is present, be it a file, folder, symbolic link, anything
+     */
+    public static boolean directoryExists(String path){
+        // The obvious check
         if (fileObject(path).exists()) return true;
+        
+        // Sometimes a directory, such as a broken symbolic link, can be present but not "exist"
+        // To guard against this, see if the parent exists and then see if the subject is listed as one of the parent's subitems
         String parent = getParentFolder(path);
         if (parent == null) return false;
         if (!folderExists(parent)) return false;
-        return new StringList(getContents(parent)).contains(path);
+        try{
+            return new StringList(getContents(parent)).contains(path);
+        }
+        catch(Exception e){
+            // GetContents throws if the parent folder doesn't exist
+            // This is checked above, but the compiler doesn't know that
+            Logger.error("FileHandler.directoryExists tried to call getContents on a folder it knew didn't exist", e, 1, 0);
+            return false;
+        }
     }
     
     
@@ -745,7 +778,7 @@ public class FileHandler extends BaseHandler {
                 contents.add(strLine);
             }
             
-            // If we're dropping empty trailing lines, pull lines until we find a non-empty one
+            // If we're dropping empty trailing lines, pull empty lines until we find a non-empty one
             // Don't worry about performance on the "last" bit; SimpleLists store in reverse order
             if (dropTailIfEmpty)
                 while (contents.any() && StringHandler.isEmpty(contents.getLast(), true))

@@ -41,7 +41,7 @@ public class BatchRunner extends BaseHandler {
         doneSignalFile = getMetaFilepath(runnerName, "done", parentFolder);
         
         // File work
-        FileHandler.ensureDirectoryExists(parentFolder);
+        FileHandler.ensureFolderExists(parentFolder);
         FileHandler.deleteFile(sessionFile);
         FileHandler.deleteFile(runnerFile);
         FileHandler.deleteFile(runnerSignalFile);
@@ -321,7 +321,7 @@ public class BatchRunner extends BaseHandler {
         // Get a filepath; getBatchFilepath(StringHandler.getUnique(), FileHandler.wheelerBatchFolder());
         // Return the path of the batchfile
         String batchFile = getBatchFilepath(StringHandler.getUnique(), FileHandler.wheelerBatchFolder());
-        FileHandler.ensureDirectoryExists(FileHandler.getParentFolder(batchFile));
+        FileHandler.ensureFolderExists(FileHandler.getParentFolder(batchFile));
         StringSimpleList steps = new StringSimpleList();
         steps.add("@echo off");
         steps.add(script);

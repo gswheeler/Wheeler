@@ -26,9 +26,9 @@ public class SoundPlayer {
     // Set up this session
     public SoundPlayer(String identifier) throws Exception{
         // Make sure the paths are present
-        FileHandler.ensureDirectoryExists(callersFolder);
-        FileHandler.ensureDirectoryExists(requestsFolder);
-        FileHandler.ensureDirectoryExists(tempFolder);
+        FileHandler.ensureFolderExists(callersFolder);
+        FileHandler.ensureFolderExists(requestsFolder);
+        FileHandler.ensureFolderExists(tempFolder);
         
         // Get a tag for our session
         sessTag = StringHandler.toAlphaNumeric(System.currentTimeMillis());
