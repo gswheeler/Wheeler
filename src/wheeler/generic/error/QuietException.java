@@ -5,8 +5,7 @@
 package wheeler.generic.error;
 
 /**
- *
- * @author Greg
+ * An exception that can be put in the code without requiring a throws declaration.
  */
 public class QuietException extends RuntimeException{
     public QuietException(){

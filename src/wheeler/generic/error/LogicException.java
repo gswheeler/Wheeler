@@ -5,8 +5,7 @@
 package wheeler.generic.error;
 
 /**
- *
- * @author Greg
+ * A generic exception for when the code gets itself someplace that doesn't make sense.
  */
 public class LogicException extends Exception {
     

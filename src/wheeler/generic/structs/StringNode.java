@@ -5,8 +5,7 @@
 package wheeler.generic.structs;
 
 /**
- *
- * @author Greg
+ * A single-linked list node with a String value.
  */
 public class StringNode implements IStringNode {
     

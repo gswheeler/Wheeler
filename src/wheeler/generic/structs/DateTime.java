@@ -9,8 +9,8 @@ import wheeler.generic.data.StringHandler;
 import wheeler.generic.data.TimeHandler;
 
 /**
- *
- * @author Greg
+ * An object for handling moments in time.
+ * Can be used to determine which of two times comes first or if a certain time has passed.
  */
 public class DateTime {
     

@@ -10,8 +10,8 @@ import wheeler.generic.data.FileHandler;
 import wheeler.generic.data.StringHandler;
 
 /**
- *
- * @author Greg
+ * Used to read from files.
+ * Handles opening, reading from, and closing input streams.
  */
 public class FileReader {
     

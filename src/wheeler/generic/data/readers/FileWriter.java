@@ -11,8 +11,8 @@ import wheeler.generic.data.StringHandler;
 import wheeler.generic.logging.Logger;
 
 /**
- *
- * @author Greg
+ * Used to write to files.
+ * Handles opening, writing to, and closing output streams.
  */
 public class FileWriter {
     

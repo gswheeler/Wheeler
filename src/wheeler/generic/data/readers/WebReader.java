@@ -7,8 +7,8 @@ package wheeler.generic.data.readers;
 import java.net.URL;
 
 /**
- *
- * @author Greg
+ * Used to read from a web address.
+ * Handles opening, reading from, and closing the input stream.
  */
 public class WebReader extends FileReader {
     

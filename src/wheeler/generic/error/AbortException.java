@@ -6,8 +6,7 @@
 package wheeler.generic.error;
 
 /**
- *
- * @author Greg
+ * A handy exception for throwing if you want to signal yourself that an operation has been aborted.
  */
 public class AbortException extends Exception{
     

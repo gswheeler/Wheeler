@@ -9,15 +9,17 @@ import wheeler.generic.data.LogicHandler;
 import wheeler.generic.data.TimeHandler;
 
 /**
- *
- * @author Greg
+ * Contains static functions that can be used to log output from a program.
+ * Set the log directory and name, then start logging.
+ * If left unset, will print log statements to standard-out.
+ * Also contains functions for printing to standard-out.
  */
 public class Logger {
     
     private static String logName = null;
-    private static String logExt = ".log";
     private static String logDir = null;
-    private static String lastWriteExtension = ".lastWrite.txt";
+    private final static String logExt = ".log";
+    private final static String lastWriteExtension = ".lastWrite.txt";
     private static String lastWriteTag = null;
     
     public static boolean infoEnabled = true;

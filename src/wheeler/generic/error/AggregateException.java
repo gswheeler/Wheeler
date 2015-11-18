@@ -7,8 +7,8 @@ package wheeler.generic.error;
 import wheeler.generic.data.StringHandler;
 
 /**
- *
- * @author Greg
+ * An exception for throwing when multiple errors exist.
+ * Use the static create(String, String[]) method to create a new instance to throw.
  */
 public class AggregateException extends Exception {
     
@@ -17,8 +17,8 @@ public class AggregateException extends Exception {
     }
     
     public static AggregateException create(String message, String[] errors){
-        for(int i = 0; i < errors.length; i++){
-            message += "\n    " + StringHandler.replace(errors[i], "\n", "\n    ", true);
+        for(String error : errors){
+            message += "\n    " + StringHandler.replace(error, "\n", "\n    ", true);
         }
         return new AggregateException(message);
     }

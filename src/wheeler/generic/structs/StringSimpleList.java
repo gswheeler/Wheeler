@@ -7,8 +7,9 @@ package wheeler.generic.structs;
 import wheeler.generic.data.LogicHandler;
 
 /**
- *
- * @author Greg
+ * A list optimized for gathering strings and then returning an array or StringList (simple in function, not structure).
+ * Contains a single-linked list of value/node pairs stored in reverse order
+ * (this way new values are added at the "head" rather than requiring iteration across the list to the "tail").
  */
 public class StringSimpleList implements IStringList {
     
