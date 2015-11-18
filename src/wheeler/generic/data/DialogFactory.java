@@ -10,13 +10,15 @@ import javax.swing.JOptionPane;
 import wheeler.generic.data.enums.MessageStyle;
 
 /**
- *
- * @author Greg
+ * Contains static functions for presenting the user with dialogues used for input or messaging.
  */
 public class DialogFactory {
     
     protected DialogFactory(){}
     
+    public static String chooseOption(JFrame caller, String[] options, String message){
+        return chooseOption(caller, options, message, "");
+    }
     public static String chooseOption(JFrame caller, String[] options, String message, String title){
         return (String) JOptionPane.showInputDialog(
                 caller,
@@ -29,6 +31,9 @@ public class DialogFactory {
             );
     }
     
+    public static int customOption(JFrame caller, String[] options, String message){
+        return customOption(caller, options, message, "");
+    }
     public static int customOption(JFrame caller, String[] options, String message, String title){
         int value = JOptionPane.showOptionDialog(
                 caller,
@@ -69,14 +74,20 @@ public class DialogFactory {
             : null;
     }
     
-    public static String getString(JFrame caller, String message, String caption){
-        return getString(caller, message, caption, "");
+    public static String getString(JFrame caller, String message){
+        return getStringWithDefault(caller, message, "", "");
     }
-    public static String getString(JFrame caller, String message, String caption, String defStr){
+    public static String getString(JFrame caller, String message, String title){
+        return getStringWithDefault(caller, message, title, "");
+    }
+    public static String getStringWithDefault(JFrame caller, String message, String defStr){
+        return getStringWithDefault(caller, message, "", defStr);
+    }
+    public static String getStringWithDefault(JFrame caller, String message, String title, String defStr){
         return (String) JOptionPane.showInputDialog(
                     caller,
                     message,
-                    caption,
+                    title,
                     JOptionPane.PLAIN_MESSAGE,
                     null,
                     null,
@@ -84,11 +95,16 @@ public class DialogFactory {
                 );
     }
     
-    public static boolean optionYesNo(JFrame caller, String message){ return optionYesNo(caller, message, ""); }
+    public static boolean optionYesNo(JFrame caller, String message){
+        return optionYesNo(caller, message, "");
+    }
     public static boolean optionYesNo(JFrame caller, String message, String title){
         return JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.YES_NO_OPTION);
     }
     
+    public static int optionYesNoCancel(JFrame caller, String message){
+        return optionYesNoCancel(caller, message, "");
+    }
     public static int optionYesNoCancel(JFrame caller, String message, String title){
         int retVal = JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
         if (retVal == JOptionPane.YES_OPTION) return 1;
@@ -97,7 +113,17 @@ public class DialogFactory {
     }
     
     public static void message(JFrame caller, String message){
-        JOptionPane.showMessageDialog(caller, message);
+        message(caller, message, "");
+    }
+    public static void message(JFrame caller, String message, String title){
+        JOptionPane.showMessageDialog(caller, message, title, JOptionPane.PLAIN_MESSAGE);
+    }
+    
+    public static boolean optionOkCancel(JFrame caller, String message){
+        return optionOkCancel(caller, message, "");
+    }
+    public static boolean optionOkCancel(JFrame caller, String message, String title){
+        return JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.OK_CANCEL_OPTION);
     }
     
     /**Display an exception to the user
