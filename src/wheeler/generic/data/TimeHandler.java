@@ -8,8 +8,8 @@ import java.util.Calendar;
 import wheeler.generic.structs.DateTime;
 
 /**
- *
- * @author Greg
+ * Contains static functions used to handle time-related actions.
+ * Can be used to get a timestamp or the system time in milliseconds.
  */
 public class TimeHandler {
     
@@ -18,28 +18,6 @@ public class TimeHandler {
     
     
     /// Functions ///
-    
-    /*public static String getDatestamp(){
-        Calendar thisDate = Calendar.getInstance();
-        int month = thisDate.get(Calendar.MONTH) + 1;
-        int day = thisDate.get(Calendar.DAY_OF_MONTH);
-        int year = thisDate.get(Calendar.YEAR);
-        String result = ((month < 10) ? "0" : "") + Integer.toString(month);
-        result += "-" + ((day < 10) ? "0" : "") + Integer.toString(day);
-        result += "-" + Integer.toString(year);
-        return result;
-    }
-    public static String getDateTag(){
-        Calendar thisDate = Calendar.getInstance();
-        int month = thisDate.get(Calendar.MONTH) + 1;
-        int day = thisDate.get(Calendar.DAY_OF_MONTH);
-        int year = thisDate.get(Calendar.YEAR);
-        String result = Integer.toString(year);
-        result += "-" + ((month < 10) ? "0" : "") + Integer.toString(month);
-        result += "-" + ((day < 10) ? "0" : "") + Integer.toString(day);
-        return result;
-    }*/
-    
     
     /**Gets the current time represented in string form. y=Year, M=Month, d=Day, h=Hour, m=Minute, s=Second, z=Milli
      * @param format The string that will determine the format of the string returned
@@ -67,16 +45,6 @@ public class TimeHandler {
     }
     
     
-    public static int parseClock(String clock){
-        String[] digits = StringHandler.parseIntoArray(clock, ":");
-        int total = 0;
-        for(int i = 0; i < digits.length; i++){
-            total = (60*total) + Integer.valueOf(digits[i]);
-        }
-        return total;
-    }
-    
-    
     public static int getHour(){ return getHour(true); }
     public static int getHour(boolean military){
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
@@ -91,6 +59,10 @@ public class TimeHandler {
     }
     
     
+    /**
+     * Use to get the system time
+     * @return A long with the system time in milliseconds
+     */
     public static long ticks(){ return System.currentTimeMillis(); }
     
     
