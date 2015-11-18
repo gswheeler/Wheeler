@@ -32,11 +32,17 @@ public class StringHandler {
         "a", "b", "c", "d", "e", "f"};
     public static String whitespaceChars = "\r\n\t ";
     
+    public static boolean defaultCaseSensitivity = false;
+    
     
     
     /// Functions
     
     // 
+    public static boolean contains(String subject, String check){
+        return contains(subject, check, defaultCaseSensitivity);
+    }
+    @SuppressWarnings("IndexOfReplaceableByContains") // IndexOf tends to work better (don't have to worry about regex special characters)
     public static boolean contains(String subject, String check, boolean caseSensitive){
         if(!caseSensitive){
             subject = subject.toLowerCase();
@@ -161,7 +167,7 @@ public class StringHandler {
         
         // Get everything before the next separator string, recursive
         StringList list = new StringList();
-        while(subject.indexOf(separator) != -1){
+        while(contains(subject, separator)){
             list.insert(subject.substring(0, subject.indexOf(separator)), 0);
             subject = subject.substring(subject.indexOf(separator) + 1);
         }
