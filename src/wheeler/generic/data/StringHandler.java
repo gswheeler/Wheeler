@@ -6,6 +6,8 @@ package wheeler.generic.data;
 
 import java.util.concurrent.atomic.AtomicLong;
 import wheeler.generic.error.QuietException;
+import wheeler.generic.structs.IStringList;
+import wheeler.generic.structs.IStringNode;
 import wheeler.generic.structs.StringList;
 
 /**
@@ -177,6 +179,37 @@ public class StringHandler {
         
         // Return the list in the right order
         return list.getReversedArray();
+    }
+    
+    
+    // Take in an array of strings and concatenate them into a single string
+    public static String concatStringArray(String[] array, String separator){
+        // If the array is empty, return an empty string
+        if (array.length == 0) return "";
+        
+        // The result string starts with the first item (no separator)
+        String result = array[0];
+        
+        // Add all subsequent strings, each preceded by the separator
+        for (int i = 1; i < array.length; i++) result += separator + array[i];
+        
+        // Return the result
+        return result;
+    }
+    // Take in a list of strings and concatenate them into a single string
+    public static String concatStringList(IStringList list, String separator){
+        // If the list is empty, return an empty string
+        IStringNode node = list.getHeader().getNext();
+        if (node == null) return "";
+        
+        // The result string starts with the first item (no separator)
+        String result = node.getValue();
+        
+        // Add all subsequent strings, each preceded by the separator
+        while ((node = node.getNext()) != null) result += separator + node.getValue();
+        
+        // Return the result
+        return result;
     }
     
     
