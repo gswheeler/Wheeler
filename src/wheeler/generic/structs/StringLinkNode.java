@@ -7,8 +7,8 @@ package wheeler.generic.structs;
 import wheeler.generic.data.StringHandler;
 
 /**
- *
- * @author Greg
+ * A double-linked list node with a String value.
+ * Used primarily by the StringSortedList class, which sorts string and maintains an index
  */
 public class StringLinkNode implements IStringNode {
     
@@ -21,11 +21,11 @@ public class StringLinkNode implements IStringNode {
     // The value of this node
     public String value;
     
-    // An extra value used only by our StringLinkedList
+    // An extra value used only by StringSortedList to manage its internal index
     private int myChainIndex;
     
     // An instance signature used to make sure nodes are pointing to the right nodes
-    private long myInstance;
+    private final long myInstance;
     
     
     
@@ -54,25 +54,6 @@ public class StringLinkNode implements IStringNode {
     }
     
     
-    // Add the given value to the list
-    /*public void add(String value){
-        if(next != null && next.afterThis(value, true)){ // Goes after the next one in the list
-            next.add(value);
-        }else{ // Comes directly after this one; no subsequent node or its value comes after the current value
-            insert(value);
-        }
-    }*/
-    
-    
-    // Does the given string occur in the list
-    /*public boolean contains(String str){
-        if (StringHandler.areEqual(str, value, false)) return true;
-        return (next != null && next.afterThis(str, true))
-                ? next.contains(str)
-                : false;
-    }*/
-    
-    
     // Does the given string come after the value in this node?
     public boolean afterThis(String str, boolean includeMatch){
         if (value == null) return true;
@@ -87,33 +68,11 @@ public class StringLinkNode implements IStringNode {
     }
     
     
-    // Get the last node in the list
-    /*public StringLinkNode last(){
-        return (next != null)
-                ? next.last()
-                : this;
-    }*/
-    
-    
-    // Get the length of the list, including this node if appropriate
-    /*public int length(){
-        int myValue = (value != null) ? 1 : 0;
-        return (next != null)
-            ? next.length() + myValue
-            : myValue;
-    }*/
-    
-    
-    // Get the index for this section of linked nodes
-    /*public int getChainIndex(){
-        return (myChainIndex < 0 && prev != null)
-                ? prev.getChainIndex()
-                : myChainIndex;
-    }*/
+    // Get the index for this section of linked nodes (StringSortedList only)
     public int getChainIndex(){
         StringLinkNode node = this;
-        while (node.myChainIndex < 0 && node.prev != null) node = node.prev;
-        return node.myChainIndex;
+        while ((node != null) && !node.chainIndexSet()) node = node.prev;
+        return (node != null) ? node.myChainIndex : -1;
     }
     public void clearChainIndex(){ myChainIndex = -1; }
     public void setChainIndex(int i){ myChainIndex = i; }
