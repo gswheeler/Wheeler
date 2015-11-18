@@ -10,10 +10,10 @@ import wheeler.generic.data.StringHandler;
 import wheeler.generic.error.LogicException;
 
 /**
- *
- * @author Greg
+ * WARNING: WORK IN PROGRESS, HAS NOT BEEN PROPERLY TESTED. A list of strings stored in sorted (alphabetical) order.
+ * Contains a double-linked list of value/node/node nodes.
  */
-public class StringLinkedList implements IStringList {
+public class StringSortedList implements IStringList {
     
     // The start of this list
     private StringLinkNode header;
@@ -30,16 +30,16 @@ public class StringLinkedList implements IStringList {
     
     
     /// Constructor ///
-    public StringLinkedList(){
+    public StringSortedList(){
         header = new StringLinkNode(null);
         _lastNode = header;
         recalibrateIndex(true);
     }
-    public StringLinkedList(String str){
+    public StringSortedList(String str){
         this();
         add(str);
     }
-    public StringLinkedList(String[] array){
+    public StringSortedList(String[] array){
         this();
         add(array);
     }
@@ -50,7 +50,7 @@ public class StringLinkedList implements IStringList {
     
     // Add a value to the list
     @Override
-    public final StringLinkedList add(String value){
+    public final StringSortedList add(String value){
         // First, see if we can take a shortcut and put it at the end of the list
         if(lastNode().afterThis(value, true)){
             lastNode().insert(value);
@@ -74,36 +74,24 @@ public class StringLinkedList implements IStringList {
     
     // Add an array of strings
     @Override
-    public final StringLinkedList add(String[] array){
+    public final StringSortedList add(String[] array){
         if (array.length == 0) return this;
         
-        // Do all strings go after the last node?
-        boolean allAfter = true;
-        for(int i = 0; i < array.length; i++)
-            if(!lastNode().afterThis(array[i], true))
-                { allAfter = false; break; }
-        // If so, sort and add like no-one's business
-        if(allAfter){
-            array = StringHandler.sortStrings(array);
-            StringLinkNode node = lastNode();
-            lengths[node.getChainIndex()] += array.length;
-            for (int i = 0; i < array.length; i++) node = node.insert(array[i]);
-            return this;
-        }
+        // Add each string in turn; trust in our basic optimization logic
+        for(String str : array)
+            add(str);
         
-        // Just call add a bunch of times. No sorting: the more time before any one chunk triggers recalibration the better
-        for (int i = 0; i < array.length; i++) add(array[i]);
         return this;
     }
     
     
     // Add a list of strings
     @Override
-    public StringLinkedList add(IStringList list){
+    public StringSortedList add(IStringList list){
         if (list.isEmpty()) return this;
         
         // Not a whole lot we can do here:
-        // If it isn't sorted we can't do so in-place, given how large it may be
+        // If it isn't sorted we shouldn't really do so here; that's the whole point of this list
         // If they aren't all after the last node we really can't do much optimization-wise
         
         // Just add each node in turn and trust to our basic optimization infrastructure
@@ -207,32 +195,39 @@ public class StringLinkedList implements IStringList {
     
     // Return the node that is/will be before the first occurance of the string in the list
     // Alternately gets the last occurance of the string in the list if it's already in there
-    private StringLinkNode getNodeBefore(String value, boolean afterLastInstance){
+    private StringLinkNode getNodeBefore(String value, boolean getLastInstance){
         StringLinkNode node = index[getIndex(value)];
-        while(node.next != null && node.next.afterThis(value, afterLastInstance)) node = node.next;
+        while(node.next != null && node.next.afterThis(value, getLastInstance)) node = node.next;
         return node;
     }
     
     
     // Check if it makes sense to recalibrate the index. If yes or we're forcing this, do so
     private void recalibrateIndex(boolean force){
-        boolean doIt = force;
-        for(int i = 0; i < lengths.length && !doIt; i++){
-            if (lengths[i] < minLength || lengths[i] > maxLength || index[i].wasRemoved()) doIt = true;
+        boolean recalibrate = false;
+        if (force){
+            recalibrate = true;
+        }else{
+            for(int i = 0; i < lengths.length; i++){
+                if ((lengths[i] < minLength) || (lengths[i] > maxLength) || index[i].wasRemoved()){
+                    recalibrate = true;
+                    break;
+                }
+            }
         }
-        if (doIt) recalibrateIndexWorker();
+        if (recalibrate) recalibrateIndexWorker();
     }
-    // Re-calibrate the indexes; start with the header, register every ten nodes
+    // Re-calibrate the indexes; start with the header, register every optLength nodes
     private void recalibrateIndexWorker(){
         int count = length() + 1;
         
-        // Must have at least one for the header, last index should not have less than five nodes after it
+        // Must have at least one for the header, last index should not have less than minLength nodes after it
         int numI = 1;
         while (count >= minLength + optLength){ numI++; count -= optLength; }
         index = new StringLinkNode[numI];
         lengths = new int[numI];
         
-        // Populate the index, along with the lengths thing
+        // Populate the index, along with the lengths array
         StringLinkNode node = header;
         // Remove any chain indexing
         while ((node = node.next) != null)
@@ -241,7 +236,7 @@ public class StringLinkedList implements IStringList {
         node = header;
         int i = 0;
         index[i] = node; node.setChainIndex(i); i++;
-        // Index every X nodes, informing them of their index
+        // Index every optLength nodes, informing them of their index
         while(i < numI){
             lengths[i-1] = optLength;
             for (int j = 0; j < optLength; j++) node = node.next;
@@ -352,14 +347,15 @@ public class StringLinkedList implements IStringList {
                             + node.getInstanceNumber() + "\n" + index[node.getChainIndex()].getInstanceNumber());
                 }
             }
+            // Always checked: nesting this block to maintian readability
             {
                 int indexVal = getIndex(node.value);
                 StringLinkNode indexNode = index[indexVal];
                 if((indexNode.value != null) && (!StringHandler.strAbeforeB(indexNode.value, node.value)))
                     return invalidMsg(caller, "getIndex, when called with value\n" + node.value
                             + "\non node " + count + " returned index\n" + indexVal + "\n which pointed at a node with value\n"
-                            + indexNode.value + "\nwhich is not before the utilitzed value");
-                while(!StringHandler.areEqual(indexNode.value, node.value, false)){
+                            + indexNode.value + "\nwhich is not BEFORE the requested value");
+                while(!StringHandler.areEqual(indexNode.value, node.value, true)){
                     indexNode = indexNode.next;
                     if(StringHandler.strAafterB(indexNode.value, node.value))
                         return invalidMsg(caller, "calling getIndex with value\n" + node.value
@@ -372,13 +368,20 @@ public class StringLinkedList implements IStringList {
         for(int i = 0; i < index.length; i++){
             node = index[i];
             if(!node.chainIndexSet()){
-                return invalidMsg(caller, "The node at index " + i + " did not have its index set");
+                return invalidMsg(caller, "the node at index " + i + " did not have its index set");
+            }
+            if(node.getChainIndex() != i){
+                return invalidMsg(caller, "the node at index " + i + " did not have its index set to "
+                        + i + "; was set to " + node.getChainIndex());
+            }
+            if(node.wasRemoved()){
+                return invalidMsg(caller, "the node at index " + i + " had been removed");
             }
         }
         return true;
     }
     private boolean invalidMsg(JFrame caller, String detail) throws Exception{
-        String message = "There's a bug in our StringLinkedList: " + detail;
+        String message = "There's a bug in our StringSortedList: " + detail;
         if (caller == null) throw new LogicException(message);
         DialogFactory.message(caller, message);
         return false;
@@ -398,14 +401,14 @@ public class StringLinkedList implements IStringList {
         // Decrement the lengths counter for the header; make it so recalibration is all but certain
         lengths[0]--;
         
-        // If we're pulling out an indexed node, replace it in the index with the header
-        if(header.next.chainIndexSet()){
-            index[header.next.getChainIndex()] = header;
-        }
+        // Whenever we hit an indexed node, have the list recalibrate itself
+        // If this would be a performance problem, reset the counters using setIndexCounts()
+        boolean hitIndexedNode = header.next.chainIndexSet();
         
-        // Get the value, eat the node, return the value
+        // Grab the value and eat the node. Recalibrate if the index has been invalidated
         String value = header.next.value;
         header.next.remove();
+        if (hitIndexedNode) recalibrateIndex(true);
         return value;
     }
     @Override
@@ -434,7 +437,7 @@ public class StringLinkedList implements IStringList {
         // Have the node remove itself from the list, return the value
         _lastNode = node.prev;
         node.remove();
-        recalibrateIndex(hitIndexedNode);
+        if (hitIndexedNode) recalibrateIndex(true);
         return node.value;
     }
     
@@ -486,8 +489,8 @@ public class StringLinkedList implements IStringList {
     public boolean isEmpty(){ return header.next == null; }
 
     @Override
-    public StringLinkedList getNew() {
-        return new StringLinkedList();
+    public StringSortedList getNew() {
+        return new StringSortedList();
     }
     
     
