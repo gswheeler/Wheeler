@@ -21,7 +21,7 @@ public class FileNameMatches extends BasicFilter {
     
     /// Variables
     
-    private String nameExpr;
+    private final String nameExpr;
     
     
     
