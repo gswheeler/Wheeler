@@ -8,9 +8,11 @@ import wheeler.generic.data.LogicHandler;
 import wheeler.generic.data.StringHandler;
 
 /**
- *
- * @author Greg
+ * A list of Strings.
+ * Contains a single-linked list of value/node nodes.
+ * Uses loops rather than recursion to better handle large lists (avoids extensive strings of nested calls).
  */
+@SuppressWarnings("EqualsAndHashcode") // We only need to override the equals function; hashcode is irrelevant
 public class StringList implements IStringList {
     
     /// Constructors
@@ -110,9 +112,6 @@ public class StringList implements IStringList {
     }
     
     
-    // Provide a reference to this list to expand on the available operations when given an IStringList?
-    
-    
     // Get a count of how many nodes are in the list
     @Override
     public int length(){
@@ -135,9 +134,7 @@ public class StringList implements IStringList {
     @Override
     public final StringList add(String str){
         // Prevent nulls
-        //if (!str.equals(str)) return;
-        //if(str == null) throw new Exception("StringList does not support null values");
-        if(str == null) throw new NullPointerException();
+        if (str == null) throw new NullPointerException();
         
         // Go to the end of the list
         StringNode node = listHeader;
@@ -154,14 +151,17 @@ public class StringList implements IStringList {
     // Add an array of strings to the end of the list
     @Override
     public final StringList add(String[] array){
+        // Prevent nulls
+        for (String str : array) if (str == null) throw new NullPointerException();
+        
         // Go to the end of the list
         StringNode node = listHeader;
         while(node.next != null)
             node = node.next;
         
         // Add each string to the end of the list
-        for(int i = 0; i < array.length; i++){
-            node.next = new StringNode(array[i]);
+        for(String str : array){
+            node.next = new StringNode(str);
             node = node.next;
         }
         
@@ -172,6 +172,11 @@ public class StringList implements IStringList {
     // Add a list of strings to the end of the list
     @Override
     public StringList add(IStringList list){
+        // Prevent nulls
+        IStringNode node = list.getHeader();
+        while ((node = node.getNext()) != null)
+            if (node.getValue() == null) throw new NullPointerException();
+        
         // Go to the end of the list
         StringNode myNode = listHeader;
         while (myNode.next != null) myNode = myNode.next;
@@ -205,44 +210,11 @@ public class StringList implements IStringList {
     }
     
     
-    // Insert a string into the list. Inserts itself before the first string greater than it
-    // Returns true if the value was unique, i.e. there wasn't a string in the list with the same value
-    // Nevermind; just get StringLinkedList working
-    /*public boolean insert(String str){
-        // Prevent nulls
-        //if (!str.equals(str)) return false;
-        //if(str == null) throw new Exception("StringList does not support null values");
-        if(str == null) throw new NullPointerException();
-        
-        // Find the first node with a greater value or the end of the list
-        StringNode node = listHeader;
-        while(node.next != null && !StringHandler.strAafterB(node.next.value, str))
-            node = node.next;
-        
-        // Since the current node is either less than or equal to the new string, now is the time to check for uniqueness
-        if(node.value != null && node.value.equalsIgnoreCase(str)) return false;
-        
-        // The next node is either null or comes after the "new" node. Insert "new" node as such
-        node.next = new StringNode(str, node.next);
-        return true;
-    }
-    
-    
-    // Insert an array of Strings
-    public boolean[] insert(String[] strArray){
-        boolean[] result = new boolean[strArray.length];
-        for(int i = 0; i < strArray.length; i++)
-            result[i] = insert(strArray[i]);
-        return result;
-    }*/
-    
-    
-    // Insert a string at the given position. If the list is too small to insert at the given position, puts it at the end
+    // Insert a string at the given position. If the list is too small to insert at the given position, throws an exception
     public void insert(String str, int position){
-        // Prevent nulls
-        //if (!str.equals(str)) return -1;
-        //if(str == null) throw new Exception("StringList does not support null values");
-        if(str == null) throw new NullPointerException();
+        // Prevent nulls and obvious bad-indexes
+        if (str == null) throw new NullPointerException();
+        if (position < 0) throw new ArrayIndexOutOfBoundsException();
         
         // Go to the specified position
         StringNode node = listHeader; int index = 0;
@@ -258,6 +230,10 @@ public class StringList implements IStringList {
     
     // Insert a set of Strings starting at a specific index
     public void insert(String[] array, int position){
+        // Prevent nulls and obvious bad-indexes
+        for (String str : array) if (str == null) throw new NullPointerException();
+        if (position < 0) throw new ArrayIndexOutOfBoundsException();
+        
         // Go to the specified position
         StringNode node = listHeader; int index = 0;
         while(index < position){
@@ -292,17 +268,15 @@ public class StringList implements IStringList {
     @Override
     public int remove(String[] strs){
         // Prevent nulls
-        for(int i = 0; i < strs.length; i++){
-            if(strs[i] == null) throw new NullPointerException();
-        }
+        for (String str : strs) if(str == null) throw new NullPointerException();
         
         // Cut out all nodes that match
         StringNode node = listHeader; int count = 0;
         while(node.next != null){
             // Does the next string match any of the strings we are removing?
             boolean matchFound = false;
-            for(int i = 0; i < strs.length; i++){
-               if(node.next.value.equalsIgnoreCase(strs[i])){
+            for(String str : strs){
+               if(node.next.value.equalsIgnoreCase(str)){
                    matchFound = true;
                    break;
                }
@@ -336,7 +310,7 @@ public class StringList implements IStringList {
     // Remove just the first instance of a string
     public boolean removeFirst(String str){
         // Prevent nulls
-        if(str == null) throw new NullPointerException();
+        if (str == null) throw new NullPointerException();
         
         // Cut out the first node that matches
         StringNode node = listHeader;
@@ -410,15 +384,13 @@ public class StringList implements IStringList {
     // Does the list contain the provided string?
     @Override
     public boolean contains(String str){
-        // Prevent nulls
-        //if (!str.equals(str)) return false;
-        //if(str == null) throw new Exception("StringList does not support null values");
-        if(str == null) throw new NullPointerException();
+        // If we actually have a null, that's a problem. As such, prevent nulls here as well
+        if (str == null) throw new NullPointerException();
         
         // Look for a match
         StringNode node = listHeader;
         while((node = node.next) != null){
-            if (node.value.equalsIgnoreCase(str)) return true;
+            if (StringHandler.areEqual(str, node.value, false)) return true;
         }
         return false;
     }
@@ -438,6 +410,41 @@ public class StringList implements IStringList {
     @Override
     public StringList getNew() {
         return new StringList();
+    }
+    
+    // Check if this list is equal to another object (StringList or otherwise)
+    @Override
+    public boolean equals(Object o){
+        if (o instanceof StringList)
+            return contentsMatch(this, (StringList)o);
+        return false;
+    }
+    
+    public static boolean contentsMatch(IStringList list1, IStringList list2){
+        // May the runners take their positions
+        IStringNode thisNode = list1.getHeader();
+        IStringNode thatNode = list2.getHeader();
+        
+        // Loop until we have a verdict
+        while(true){
+            // Move up a node
+            thisNode = thisNode.getNext();
+            thatNode = thatNode.getNext();
+            
+            // Check if the ends of both lists have been reached
+            if ((thisNode == null) && (thatNode == null))
+                return true;
+            
+            // Check if one of the lists is shorter than the other
+            if ((thisNode == null) || (thatNode == null))
+                return false;
+            
+            // Check if the nodes have different values
+            if (!StringHandler.areEqual(thisNode.getValue(), thatNode.getValue(), false))
+                return false;
+            
+            // Both nodes had values, said values matched, move on to the next pair of nodes
+        }
     }
     
 }
