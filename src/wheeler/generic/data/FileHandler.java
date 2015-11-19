@@ -707,12 +707,13 @@ public class FileHandler extends BaseHandler {
     
     // What is the actual target of the symbolic link? Throw if not a link
     public static String resolveSymbolicLinkTarget(String path) throws Exception{
-        // Find out what it's pointing at
+        // Get the link target (also checks that it is, in fact, a symbolic link)
         String target = inspectSymbolicLink(path);
         
-        // It's relative; handle any special path items
+        // Find out what it's pointing at
+        // Note: relative filepaths resolve from the parent folder of the link
         // Can't do anything else at this point, lest we hit a recursive loop
-        return resolveRelativeFilepath(path, target);
+        return resolveRelativeFilepath(getParentFolder(path), target);
     }
     
     // Delete the directory if and only if it is a symbolic link. Spare the link's target
