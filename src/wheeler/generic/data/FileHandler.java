@@ -705,6 +705,16 @@ public class FileHandler extends BaseHandler {
         return Files.readSymbolicLink(fileObject(path).toPath()).toString();
     }
     
+    // What is the actual target of the symbolic link? Throw if not a link
+    public static String resolveSymbolicLinkTarget(String path) throws Exception{
+        // Find out what it's pointing at
+        String target = inspectSymbolicLink(path);
+        
+        // It's relative; handle any special path items
+        // Can't do anything else at this point, lest we hit a recursive loop
+        return resolveRelativeFilepath(path, target);
+    }
+    
     // Delete the directory if and only if it is a symbolic link. Spare the link's target
     public static boolean deleteSymbolicLink(String path) throws Exception{
         if (!directoryExists(path)) return false;
@@ -907,6 +917,38 @@ public class FileHandler extends BaseHandler {
             throw new LogicException("Folder " + containingFolder + " does not contain path " + path);
         // Get the new filepath
         return composeFilepath(newFolder, path.substring(containingFolder.length()));
+    }
+    
+    // Using a base filepath, resolve a relative filepath
+    public static String resolveRelativeFilepath(String path, String target){
+        // If the target is absolute, just return that
+        if (isAbsolute(target)) return target;
+        
+        // Starts with a slash, goes to the root
+        if(target.startsWith("\\")){
+            while (getParentFolder(path) != null) path = getParentFolder(path);
+            target = StringHandler.trimLeadingCharacters(target, "\\");
+        }
+        
+        // Go folder-by-folder, handling special directories as appropriate
+        String[] folders = StringHandler.parseIntoArray(target, "\\");
+        for(String folder : folders){
+            // Double-slash, just skip it
+            if (folder.equals("")) continue;
+            // "This" directory
+            if (folder.equals(".")) continue;
+            // "Parent" directory
+            if(folder.equals("..")){
+                String parent = getParentFolder(path);
+                if (parent != null) path = parent;
+                continue;
+            }
+            // Subdirectory
+            path = composeFilepath(path, folder);
+        }
+        
+        // And done; return the newly-created filepath
+        return path;
     }
     
     
