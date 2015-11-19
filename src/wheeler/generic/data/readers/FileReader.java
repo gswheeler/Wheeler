@@ -42,25 +42,30 @@ public class FileReader {
     
     // More complicated than it looks; br.readLine() automatically removes newlines
     public String readLine(boolean trimNewlines) throws Exception{
-        if (closed) return null;//throw new Exception("Tried to read from FileReader after it was closed");
+        // The reader is closed if we hit end-of-file during the last read
+        // (said read still returned a string, so now is the time to return a null)
+        if (closed) return null;
         
         try{
             // Gather characters until a newline or end-of-file
             String strLine = "";
             int inChar;
             while(true){
+                // Get the next character
                 inChar = readChar();
-                if((inChar == -1) || ((char)inChar == '\n')) break;
+                
+                // If we hit the end of the file, close the reader and return the last of the data
+                if(inChar == -1){
+                    close();
+                    break;
+                }
+                
+                // Add the character. If we hit a newline, pause reading to return what we have
                 strLine += (char)inChar;
-            }
+                if ((char)inChar == '\n') break;
+            }   
             
-            // Handle last character; if not end-of-file, append it
-            if(inChar != -1)
-                strLine += (char)inChar;
-            else
-                close();
-            
-            // Pass it in
+            // Return the line, trimming newlines if desired
             return trimNewlines
                 ? StringHandler.trimNewlines(strLine)
                 : strLine;
