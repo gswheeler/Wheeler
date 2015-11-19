@@ -8,6 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import wheeler.generic.data.enums.MessageStyle;
+import wheeler.generic.logging.Logger;
 
 /**
  * Contains static functions for presenting the user with dialogues used for input or messaging.
@@ -135,6 +136,30 @@ public class DialogFactory {
      */
     public static void errorMsg(JFrame caller, String message, Exception e, int traceLevel, int indirection){
         message(caller, message + "\n" + LogicHandler.exToString(e, traceLevel, 1 + indirection));
+    }
+    
+    /**
+     * When working with the console, prompt the user to press Enter to continue.
+     * @param prompt The prompt to display to the user (does not print a newline or a trailing space).
+     */
+    public static void pressEnterToContinue(String prompt){
+        System.out.print(prompt);
+        pressEnterToContinue();
+    }
+    
+    /**
+     * When working with the console, wait for the user to press Enter before continuing.
+     */
+    public static void pressEnterToContinue(){
+        getStringFromConsole();
+    }
+    
+    /**
+     * When working with the console, get a String from the user.
+     * @return The String entered by the user.
+     */
+    public static String getStringFromConsole(){
+        return System.console().readLine();
     }
     
     public static void message(JFrame caller, String message, MessageStyle style){
