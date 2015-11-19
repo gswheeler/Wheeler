@@ -242,6 +242,64 @@ public class StringHandler {
     }*/
     
     
+    /**
+     * Convert a number into a string with commas delineating thousands, millions, etc
+     * @param number The number to format. Can be positive or negative.
+     * @return A string, with comma-delineation, representing the provided number.
+     * @throws Exception Thrown by commaDelineateNumber if the number, converted to a string, was not in an expected format.
+     */
+    public static String commaDelineate(int number) throws Exception{
+        return commaDelineateNumber(Integer.toString(number));
+    }
+    /**
+     * Convert a Long into a string with commas delineating thousands, millions, etc
+     * @param number The Long with the value to format. Can be positive or negative.
+     * @return A string, with comma-delineation, representing the provided number.
+     * @throws Exception Thrown by commaDelineateNumber if the number, converted to a string, was not in an expected format.
+     */
+    public static String commaDelineate64(long number) throws Exception{
+        return commaDelineateNumber(Long.toString(number));
+    }
+    /**
+     * Take in a numerical string, add commas to delineate thousands, millions, etc
+     * @param number The numerical string to format. Can start with +/- and can have a decimal value with at least one digit.
+     * @return A string representing the provided number, now with comma-delineation
+     * @throws Exception If the provided string was not in the proper format.
+     */
+    public static String commaDelineateNumber(String number) throws Exception{
+        // Make sure we're dealing with an actual number string
+        String format = "(|\\+|\\-)\\d+(|(\\.\\d+))";
+        if (!number.matches(format))
+            throw new Exception("Number string " + number + "does not match the expected format (" + format + ")");
+        
+        // Grab the sign if there is one
+        String sign = "";
+        if(number.startsWith("+") || number.startsWith("-")){
+            sign = number.substring(0, 1);
+            number = number.substring(1);
+        }
+        
+        // Take off the decimal if one exists (don't comma-delineate that)
+        String decimal = "";
+        int decimalIndex = number.indexOf(".");
+        if(decimalIndex > -1){
+            decimal = number.substring(decimalIndex);
+            number = number.substring(0, decimalIndex);
+        }
+        
+        // For every three digits at the end of the string that are preceded by at least one digit,
+        // add a comma followed by those three digits
+        String formatted = "";
+        while(number.length() > 3){
+            formatted = "," + number.substring(number.length() - 3) + formatted;
+            number = number.substring(0, number.length() - 3);
+        }
+        
+        // Return the sign, the leading digits, the digits preceded by commas, and the decimal
+        return number + formatted + decimal;
+    }
+    
+    
     // Translate a byte size into a "readable" format
     public static String toReadableFileSize(long lngBytes){
         String[] suffixes = {"B", "KB", "MB", "GB", "TB"}; int index = 0;
@@ -372,13 +430,17 @@ public class StringHandler {
     
     
     // Escape a String into one that will always be printable
-    // Use markers to indicate where following characters should be interpreted as a numeric value
-    // Mark these characters by duplicating them (like %% in command scripts)
-    // # - 2 digits [0-31]
-    // % - 3 digits [127-999]
-    // $ - 4 digits [1000-9999]
-    // & - 5 digits [10000-99999]
+    // Use markers to indicate where subsequent characters should be interpreted as a numeric value
+    //  Mark actual occurrences of these characters by duplicating them (like %% in command scripts)
+    //  # - 2 digits [0-31]
+    //  % - 3 digits [127-999]
+    //  $ - 4 digits [1000-9999]
+    //  & - 5 digits [10000-99999]
+    //  The max (unsigned) value of char (a 16-bit number) is 65,535; we should never have a number with 6 or more digits
+    // If the string is null or empty, return a special string
     public static String escape(String str){
+        if (str == null) return "%n";
+        if (str.equals("")) return "%e";
         String result = "";
         for(int i = 0; i < str.length(); i++){
             result += escapeChar(str.charAt(i));
@@ -401,10 +463,12 @@ public class StringHandler {
     }
     
     
-    // Unescape one of our escaped strings. Will allow fail-to-cast errors to check for integrity
-    public static String unescape(String str){
+    // Unescape one of our escaped strings. Will allow index and fail-to-cast errors to check for integrity
+    public static String unescape(String str) throws Exception{
+        if (str.equals("%n")) return null;
+        if (str.equals("%e")) return "";
         if (!isPrintable(str))
-            throw new QuietException("Tried to unescape a string that wasn't even printable:\n" + str);
+            throw new Exception("Tried to unescape a string that wasn't even printable:\n" + str);
         String result = "";
         while(str.length() > 0){
             String unescape = unescapeChar(str); // Get actualChar+escapedChar
