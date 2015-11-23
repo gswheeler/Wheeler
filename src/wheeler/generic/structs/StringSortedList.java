@@ -281,8 +281,13 @@ public class StringSortedList implements IStringList {
          * Must point to an index with the same value as the node with that index
          * Must point to a node whose index is set
          */
+        /*Length values
+         * Must have a number of nodes in the chain equal to the stored length
+         * The nodes must point to the correct indexed node
+         */
         
         
+        // Test the header node
         if(header == null){
             return invalidMsg(caller, "the header was somehow null");
         }
@@ -300,6 +305,7 @@ public class StringSortedList implements IStringList {
             return invalidMsg(caller, "the header's chain index was " + header.getChainIndex() + ", not zero like we expected");
         }
         
+        // Test each list node
         StringLinkNode node = header.next;
         int count = 1;
         int lastChainIndex = 0;
@@ -365,6 +371,8 @@ public class StringSortedList implements IStringList {
             }
             node = node.next; count++;
         }
+        
+        // Test the chain index
         for(int i = 0; i < index.length; i++){
             node = index[i];
             if(!node.chainIndexSet()){
@@ -378,6 +386,36 @@ public class StringSortedList implements IStringList {
                 return invalidMsg(caller, "the node at index " + i + " had been removed");
             }
         }
+        
+        // Test the lengths index
+        if (index.length != lengths.length)
+            return invalidMsg(caller, "the chain index had a different number of values than the lengths index ("
+                    + index.length + " chains and " + lengths.length + " lengths)");
+        for(int i = 0; i < lengths.length; i++){
+            node = index[i];
+            for(int j = 0; j < lengths[i]; j++){
+                if (node == null)
+                    return invalidMsg(caller, "hit the end of a list when looking along the length of a chain (the chain at index "
+                            + i + " only had " + j + " items when it was supposed to have " + lengths[i] + ")");
+                if (node.getChainIndex() != i)
+                    return invalidMsg(caller, "chain " + i + " claimed to have " + lengths[i] + " items but item "
+                            + j + " claimed to be a part of chain " + node.getChainIndex());
+                node = node.next;
+            }
+            if(i + 1 < lengths.length){
+                if (node == null)
+                    return invalidMsg(caller, "there were supposed to be items after chain " + i + ", but the end of the list was found instead");
+                if (node.getChainIndex() != i + 1)
+                    return invalidMsg(caller, "the first item after chain " + i
+                            + " was supposed to be part of the next chain, but it claimed to be part of chain "
+                            + node.getChainIndex());
+            }else{
+                if (node != null)
+                    return invalidMsg(caller, "items were found after the end of the last chain");
+            }
+        }
+        
+        // Everything passed
         return true;
     }
     private boolean invalidMsg(JFrame caller, String detail) throws Exception{
