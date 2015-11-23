@@ -187,7 +187,7 @@ public class StringHandler {
     
     
     // Take in an array of strings and concatenate them into a single string
-    public static String concatStringArray(String[] array, String separator){
+    public static String concatArray(String[] array, String separator){
         // If the array is empty, return an empty string
         if (array.length == 0) return "";
         
@@ -201,7 +201,7 @@ public class StringHandler {
         return result;
     }
     // Take in a list of strings and concatenate them into a single string
-    public static String concatStringList(IStringList list, String separator){
+    public static String concatList(IStringList list, String separator){
         // If the list is empty, return an empty string
         IStringNode node = list.getHeader().getNext();
         if (node == null) return "";
