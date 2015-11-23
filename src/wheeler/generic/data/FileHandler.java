@@ -28,7 +28,7 @@ import wheeler.generic.structs.StringSimpleList;
  * Contains static methods used to handle file I/O operations.
  * By using the functions in this class, most projects should not have any need to import something under java.io.
  */
-public class FileHandler extends BaseHandler {
+public class FileHandler {
     
     /// Constructors
     protected FileHandler(){}

@@ -14,7 +14,7 @@ import wheeler.generic.structs.StringSimpleList;
  *
  * @author Greg
  */
-public class BatchRunner extends BaseHandler {
+public class BatchRunner {
     
     /// Non-static variables ///
     private String sessionName;
