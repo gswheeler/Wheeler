@@ -106,6 +106,7 @@ public class ResultsList extends javax.swing.JFrame {
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
         // Get a file to save to
         String saveFile = DialogFactory.saveFile(this, lastSaveFile);
+        if (saveFile == null) return;
         
         // Append ".txt" if no extensions specified
         if(!StringHandler.contains(saveFile, ".", true)){
