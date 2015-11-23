@@ -25,7 +25,7 @@ import wheeler.generic.structs.StringList;
  *
  * @author Greg
  */
-public class LogicHandler extends BaseHandler {
+public class LogicHandler {
     
     public static int max(int iA, int iB){
         return (iA > iB) ? iA : iB;
@@ -116,24 +116,28 @@ public class LogicHandler extends BaseHandler {
     }
     
     
-    private static Semaphore _lockStringSemaphore = new Semaphore(1, true);
-    private static StringList _lockStringDict = new StringList();
+    private static final Semaphore _lockStringSemaphore = new Semaphore(1, true);
+    private static final StringList _lockStringDict = new StringList();
     
     public static void lock(String lock, int timeout) throws Exception{
         if (!tryLock(lock, timeout))
             throw new Exception("Failed to lock " + lock + " within " + timeout + " seconds");
     }
     public static boolean tryLock(String lock, int timeout) throws Exception{
+        return tryLock(lock, 0, timeout);
+    }
+    private static boolean tryLock(String lock, int holdTime, int timeout) throws Exception{
         // When should we stop? If timeout is zero will only give it one try
         long deadline = TimeHandler.ticks() + ((long)(timeout * 1000));
         
         // Keep trying while there's still time. If timeout is zero, will only try once
         do{
-            lock(_lockStringSemaphore, timeout);
+            lock(_lockStringSemaphore, (timeout > 0) ? timeout : 10);
             boolean gotLock = false;
             Exception ex = null;
             try{
                 /*
+                // When we've written StringToStringDictionary, allow strings to be locked for only so long
                 String currLock = _lockStringDict.get(lock);
                 if(currLock == null){
                     // No existing lock; it's ours
@@ -149,11 +153,12 @@ public class LogicHandler extends BaseHandler {
                     gotLock = false;
                 }
                 */
+                // For now, there not being a claim is enough
                 gotLock = !_lockStringDict.contains(lock);
                 if (gotLock)
                     /*
                     _lockStringDict.set(lock, (hold > 0)
-                            ? Long.toString(TimeHandler.ticks() + ((long)(hold*1000)))
+                            ? Long.toString(TimeHandler.ticks() + ((long)(holdTime*1000)))
                             : ""
                         );
                     */
@@ -250,17 +255,6 @@ public class LogicHandler extends BaseHandler {
     }
     
     
-    public static String enumerateArray(String[] array, String divider){
-        String result = "";
-        for(int i = 0; i < array.length; i++){
-            if (array[i] == null) continue;
-            if (result.length() > 0) result += divider;
-            result += array[i];
-        }
-        return result;
-    }
-    
-    
     public static String[] reverseArray(String[] arrayA){
         String[] arrayB = new String[arrayA.length];
         for (int i = 0; i < arrayA.length; i++) arrayB[i] = arrayA[arrayA.length - i - 1];
@@ -291,7 +285,7 @@ public class LogicHandler extends BaseHandler {
         for (int i = 0; i < array.length; i++) result[i] = array[i];
         for(int i = 1; i < array.length; i++){
             // Swap each subsequent value into the "random" segment before or at its current position
-            swap(result, i, getRandomNumber(0,1));
+            swap(result, i, getRandomNumber(0,i));
         }
         return result;
     }
