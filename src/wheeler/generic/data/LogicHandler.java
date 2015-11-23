@@ -283,9 +283,11 @@ public class LogicHandler {
     public static String[] shuffleArray(String[] array){
         String[] result = new String[array.length];
         for (int i = 0; i < array.length; i++) result[i] = array[i];
-        for(int i = 1; i < array.length; i++){
-            // Swap each subsequent value into the "random" segment before or at its current position
-            swap(result, i, getRandomNumber(0,i));
+        for(int i = 0; i < array.length - 1; i++){
+            // Randomly populate each index with one of the values of the array not already chosen.
+            // With each index, the remaining "pool" will be all values at or after the index.
+            // Skip the last index; will only have the one value to choose from.
+            swap(result, i, getRandomNumber(i, result.length - 1));
         }
         return result;
     }
