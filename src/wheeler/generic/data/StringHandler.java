@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import wheeler.generic.error.QuietException;
 import wheeler.generic.structs.IStringList;
 import wheeler.generic.structs.IStringNode;
-import wheeler.generic.structs.StringList;
+import wheeler.generic.structs.StringSimpleList;
 
 /**
  *
@@ -167,18 +167,22 @@ public class StringHandler {
         // If we're passed an empty string, return an empty array
         if (subject.equals("")) return new String[0];
         
+        // We cannot use an empty string as a separator
+        if (separator.equals(""))
+            throw new QuietException("Cannot parse a string into an array using an empty string");
+        
         // Get everything before the next separator string, recursive
-        StringList list = new StringList();
+        StringSimpleList list = new StringSimpleList();
         while(contains(subject, separator)){
-            list.insert(subject.substring(0, subject.indexOf(separator)), 0);
-            subject = subject.substring(subject.indexOf(separator) + 1);
+            list.add(subject.substring(0, subject.indexOf(separator)));
+            subject = subject.substring(subject.indexOf(separator) + separator.length());
         }
         
-        // If the leftovers are not empty, add them
-        if (!subject.equals("")) list.insert(subject, 0);
+        // Add the leftovers; by our logic, starting or ending with the separator results in empty-string entries
+        list.add(subject);
         
-        // Return the list in the right order
-        return list.getReversedArray();
+        // Return the list as an array
+        return list.toArray();
     }
     
     
