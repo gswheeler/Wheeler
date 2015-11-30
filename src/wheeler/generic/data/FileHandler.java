@@ -418,6 +418,9 @@ public class FileHandler {
         while(parentsToCreate.any()){
             createFolder(parentsToCreate.pullLast());
         }
+        
+        // The parent now exists; create the folder itself
+        createFolder(path);
         return false;
     }
     
