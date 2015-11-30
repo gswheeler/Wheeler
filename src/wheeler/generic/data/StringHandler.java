@@ -44,7 +44,7 @@ public class StringHandler {
     public static boolean contains(String subject, String check){
         return contains(subject, check, defaultCaseSensitivity);
     }
-    @SuppressWarnings("IndexOfReplaceableByContains") // IndexOf tends to work better (don't have to worry about regex special characters)
+    @SuppressWarnings("IndexOfReplaceableByContains") // IndexOf tends to work better (don't have to worry about special characters)
     public static boolean contains(String subject, String check, boolean caseSensitive){
         if(!caseSensitive){
             subject = subject.toLowerCase();
