@@ -395,8 +395,10 @@ public class LogicHandler {
     }
     
     
-    // Get the method that called this function
-    // For indirection, use zero to get the function that calls this one, otherwise 1 for every call "layer" above it
+    /**Get the method signature of the function that called this one
+     * @param indirection Zero if the method with the desired signature calls this function directly, otherwise the number of calls between that method and the call to this one
+     * @return The period-delineated classpath of the method's containing class, followed by a period and the method name
+     */
     public static String getCallingMethod(int indirection) throws Exception{
         StackTraceElement[] ste = Thread.currentThread().getStackTrace();
         StackTraceElement element = ste[2 + indirection];
