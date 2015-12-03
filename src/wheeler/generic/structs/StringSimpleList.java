@@ -117,6 +117,7 @@ public class StringSimpleList implements IStringList {
         for(int i = 0; i < result.length; i++) result[result.length - i - 1] = list.get();
         list.get(); // Drop that last null
         */
+        size = LogicHandler.min(size, list.length());
         return LogicHandler.reverseArray(list.getArray(size, list.length() - size));
     }
     
