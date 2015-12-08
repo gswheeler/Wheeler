@@ -6,6 +6,7 @@ package wheeler.generic.structs;
 
 import wheeler.generic.data.LogicHandler;
 import wheeler.generic.data.StringHandler;
+import wheeler.generic.error.QuietException;
 
 /**
  * A list of Strings.
@@ -39,11 +40,6 @@ public class StringList implements IStringList {
     
     /// Functions
     
-    // Get the raw linked list of StringNodes
-    /*public StringNode getList(){
-        return listHeader.next;
-    }*/
-    
     
     // Get an array containing the values of the linked list
     @Override
@@ -76,6 +72,40 @@ public class StringList implements IStringList {
         // Return the array
         return result;
     }
+    protected static String[] getArray(IStringList list, int size, int offset){
+        // Check the parameters
+        if (size < 0) throw new QuietException("Cannot call getArray with a size less than zero");
+        if (offset < 0) throw new QuietException("Cannot call getArray with an offset less than zero");
+        
+        // Move to the start of what we're getting (first node whose value we are collecting)
+        IStringNode firstNode = list.getHeader().getNext();
+        for(int i = 0; i < offset; i++){
+            if (firstNode == null) break;
+            firstNode = firstNode.getNext();
+        }
+        
+        // Find out how many nodes we're grabbing (may be less than either size or length)
+        IStringNode node = firstNode;
+        int numNodes = 0;
+        // For each node present, count and move to the next (maximum of size times)
+        // Don't worry about performance; this will never be worse than a length() call
+        for(int i = 0; i < size; i++){
+            if (node == null) break;
+            numNodes++;
+            node = node.getNext();
+        }
+        
+        // Grab the nodes and put their values into an array
+        String[] result = new String[numNodes];
+        node = firstNode;
+        for(int i = 0; i < result.length; i++){
+            result[i] = node.getValue();
+            node = node.getNext();
+        }
+        
+        // Return the array
+        return result;
+    }
     
     
     // Get an array with a "more" tag if appropriate
@@ -86,6 +116,46 @@ public class StringList implements IStringList {
                     .add(" " + (length-size) + " more..."))
                     .toArray()
                 : getArray(size+flex);
+    }
+    protected static String[] getTruncatedArray(IStringList list, int size, int flex){
+        // Test the parameters
+        if (size < 0) throw new QuietException("Cannot call getTruncatedArray with a size less than zero");
+        if (flex < 0) throw new QuietException("Cannot call getTruncatedArray with a flex less than zero");
+        
+        // Determine if we need to append the "more" tag
+        IStringNode header = list.getHeader();
+        IStringNode node = header.getNext();
+        // Starting with the first with-value node, move ahead size+flex nodes;
+        //  if there is a node after them, it will not be included in the list thus requiring the tag
+        for(int i = 0; i < size + flex; i++){
+            if (node == null) break;
+            node = node.getNext();
+        }
+        boolean appendMoreTag = (node != null);
+        
+        // Either get the full list (will have at most size + flex items)
+        //  or get a list with size items and a "more" tag
+        if(appendMoreTag){
+            // The array we will be returning: size plus the more tag
+            String[] result = new String[size + 1];
+            
+            // Figure out how much "more" is.
+            // Node from earlier is the first node after size+flex; count that and all nodes after it
+            int more = flex; while(node != null){ more++; node = node.getNext(); }
+            
+            // Put values into the array
+            node = header.getNext();
+            for(int i = 0; i < size; i++){
+                result[i] = node.getValue();
+                node = node.getNext();
+            }
+            
+            // Add the more tag and return the array
+            result[result.length - 1] = " " + (more) + " more...";
+            return result;
+        }else{
+            return list.toArray();
+        }
     }
     
     

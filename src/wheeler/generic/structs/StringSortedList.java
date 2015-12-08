@@ -326,6 +326,12 @@ public class StringSortedList implements IStringList {
     }
     
     
+    public String[] getArray(int size){ return getArray(size, 0); }
+    public String[] getArray(int size, int offset){
+        return StringList.getArray(this, size, offset);
+    }
+    
+    
     // 
     private StringLinkNode lastNode(){
         if (_lastNode == null || _lastNode.wasRemoved())
