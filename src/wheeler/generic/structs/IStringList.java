@@ -40,7 +40,4 @@ public interface IStringList {
     int remove(String str);
     int remove(String[] strs);
     
-    // Per-list-type utilities
-    IStringList getNew();
-    
 }

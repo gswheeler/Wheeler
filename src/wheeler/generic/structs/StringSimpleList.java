@@ -15,7 +15,7 @@ public class StringSimpleList implements IStringList {
     
     /// Variables ///
     
-    private StringList list = new StringList();
+    protected StringList list = new StringList();
     
     
     
@@ -26,7 +26,7 @@ public class StringSimpleList implements IStringList {
         add(str);
     }
     public StringSimpleList(String[] data){
-        for (int i = 0; i < data.length; i++) add(data[i]);
+        for (String str : data) add(str);
     }
     
     
@@ -42,8 +42,7 @@ public class StringSimpleList implements IStringList {
     
     @Override
     public StringSimpleList add(String[] array){
-        for(int i = 0; i < array.length; i++)
-            list.insert(array[i], 0);
+        for (String str : array) list.insert(str, 0);
         return this;
     }
     
@@ -145,10 +144,5 @@ public class StringSimpleList implements IStringList {
     public boolean any(){ return list.any(); }
     @Override
     public boolean isEmpty(){ return list.isEmpty(); }
-
-    @Override
-    public StringSimpleList getNew() {
-        return new StringSimpleList();
-    }
     
 }

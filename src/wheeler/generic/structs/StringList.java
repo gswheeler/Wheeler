@@ -476,11 +476,6 @@ public class StringList implements IStringList {
     public void clear(){
         listHeader.next = null;
     }
-
-    @Override
-    public StringList getNew() {
-        return new StringList();
-    }
     
     // Check if this list is equal to another object (StringList or otherwise)
     @Override
