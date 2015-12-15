@@ -70,10 +70,10 @@ public class FileHandler {
             }
             catch(Exception e){
                 if (caller == null) throw e;
-                String message = "Failed to access/create our folder under\n" + getParentFolder(programFolder);
-                message += "\n\nPlease make sure the folder exists and your";
-                message += "  user account has Full Control under Security/Permissions";
-                message += "\n\nException details: " + LogicHandler.exToString(e, 1, 0);
+                String message = "Failed to access/create our folder under\n" + getParentFolder(programFolder) + "\n";
+                message += "\nPlease make sure the folder exists and your\n";
+                message += "  user account has Full Control under Security/Permissions\n";
+                message += "\nException details: " + LogicHandler.exToString(e, 1, 0);
                 String[] options = {"Try again", "Close program"};
                 if (0 != DialogFactory.customOption(caller, options, message, programFolder)) return false;
             }
@@ -487,7 +487,7 @@ public class FileHandler {
         }
         
         // Clear away everything in the folder
-        clearFolder(path);
+        clearFolder(path, timeoutSeconds);
         
         // Delete the folder itself
         fileObject(path).delete();
@@ -543,15 +543,18 @@ public class FileHandler {
     }
     
     // Delete the contents of a folder
-    public static void clearFolder(String path) throws Exception{ clearFolder(path, deleteDefaultTimeout); }
-    public static void clearFolder(String path, int timeoutSeconds) throws Exception{
-        if (!folderExists(path)) throw new Exception("The folder \"" + path + "\" does not exist");
+    public static boolean clearFolder(String path) throws Exception{ return clearFolder(path, deleteDefaultTimeout); }
+    public static boolean clearFolder(String path, int timeoutSeconds) throws Exception{
+        // If the folder doesn't exist, there's nothing to clear
+        if (!folderExists(path)) return false;
         // Recursively delete all subfolders
         deleteFolders(getSubfolders(path), timeoutSeconds);
         // Delete all files in this folder
         deleteFiles(getFiles(path), timeoutSeconds);
         // If there's anything left, handle as appropriate
         deleteDirectories(getContents(path), timeoutSeconds);
+        // There was a folder and we cleared it
+        return true;
     }
     
     
