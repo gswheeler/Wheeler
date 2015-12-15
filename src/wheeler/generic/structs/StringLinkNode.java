@@ -21,8 +21,9 @@ public class StringLinkNode implements IStringNode {
     // The value of this node
     public String value;
     
-    // An extra value used only by StringSortedList to manage its internal index
+    // Extra values used only by StringSortedList to manage its internal indexes
     private int myChainIndex;
+    private boolean removed;
     
     // An instance signature used to make sure nodes are pointing to the right nodes
     private final long myInstance;
@@ -34,6 +35,7 @@ public class StringLinkNode implements IStringNode {
     public StringLinkNode(String val){
         value = val;
         myChainIndex = -1;
+        removed = false;
         myInstance = instanceIndex++;
     }
     
@@ -83,9 +85,10 @@ public class StringLinkNode implements IStringNode {
         if (next != null) next.prev = prev;
         if (prev != null) prev.next = next;
         next = null; prev = null;
+        removed = true;
     }
     public boolean wasRemoved(){
-        return (next == null) && (prev == null);
+        return removed;
     }
     
     @Override
