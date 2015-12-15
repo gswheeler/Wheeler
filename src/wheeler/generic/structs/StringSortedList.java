@@ -346,13 +346,13 @@ public class StringSortedList implements IStringList {
     // Get the length of the list
     @Override
     public int length(){
-        return length(header);
+        return length(header.next);
     }
     // Get the length of a chain of nodes, starting from the given one
     private static int length(StringLinkNode node){
         int count = 0;
         while(node != null){
-            if (node.value != null) count++;
+            count++;
             node = node.next;
         }
         return count;
@@ -362,11 +362,6 @@ public class StringSortedList implements IStringList {
     public boolean any(){ return header.next != null; }
     @Override
     public boolean isEmpty(){ return header.next == null; }
-
-    @Override
-    public StringSortedList getNew() {
-        return new StringSortedList();
-    }
     
     
 }
