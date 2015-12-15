@@ -30,6 +30,20 @@ public class DialogFactory {
                 null
             );
     }
+    public static int chooseOptionNumbered(JFrame caller, String[] options, String message){
+        return chooseOptionNumbered(caller, options, message, "");
+    }
+    public static int chooseOptionNumbered(JFrame caller, String[] options, String message, String title){
+        // Insert a number before each option (note: first will be 1 but array uses index-zero)
+        for(int i = 0; i < options.length; i++){
+            options[i] = Integer.toString(i+1) + ". " + options[i];
+        }
+        // Get the choice from the user using the usual call
+        String value = chooseOption(caller, options, message, title);
+        if (value == null) return -1;
+        // Grab the number at the start of the chosen option, cast, index-zero, and return
+        return Integer.valueOf(value.substring(0, value.indexOf("."))) - 1;
+    }
     
     public static int customOption(JFrame caller, String[] options, String message){
         return customOption(caller, options, message, "");
