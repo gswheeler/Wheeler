@@ -53,6 +53,9 @@ public class StringHandler {
         return (subject.indexOf(check) != -1);
     }
     
+    public static boolean areEqual(String subject, String check){
+        return areEqual(subject, check, defaultCaseSensitivity);
+    }
     public static boolean areEqual(String subject, String check, boolean caseSensitive){
         if ((subject == null) && (check == null)) return true;
         if ((subject == null) || (check == null)) return false;
