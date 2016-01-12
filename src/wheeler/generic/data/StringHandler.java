@@ -13,8 +13,7 @@ import wheeler.generic.structs.IStringNode;
 import wheeler.generic.structs.StringSimpleList;
 
 /**
- *
- * @author Greg
+ * Class containing static functions that handle string-related logic
  */
 public class StringHandler {
     
@@ -370,6 +369,7 @@ public class StringHandler {
     // Compare two strings; -1 if the first comes first, +1 if the second comes first, 0 if they are the same
     
     /**Does the first string come before the second?
+     * The comparison is made using the StringSorter object assigned to the stringSorter variable.
      * @param strA The first string
      * @param strB The second string
      * @return True if the first string comes before the second, false otherwise
@@ -377,38 +377,68 @@ public class StringHandler {
     public static boolean strAbeforeB(String strA, String strB){ return compareStrings(strA, strB) < 0; }
     
     /**Does the first string come after the second?
+     * The comparison is made using the StringSorter object assigned to the stringSorter variable.
      * @param strA The first string
      * @param strB The second string
      * @return True if the first string comes after the second, false otherwise
      */
     public static boolean strAafterB(String strA, String strB){ return compareStrings(strA, strB) > 0; }
     
+    /**Compares two strings to determine whether the first string comes before, comes after, or coincides with the second string.
+     * The comparison is made using the StringSorter object assigned to the stringSorter variable.
+     * @param strA The string against which the other string is compared.
+     * @param strB The string compared against the other other string.
+     * @return -1 if the first string comes before the second, 1 if it comes after, and 0 if it coincides.
+     */
     public static int compareStrings(String strA, String strB){
         return stringSorter.compareStrings(strA, strB);
     }
     
     
-    // Printable characters range from 32 to 126
-    // Note: 32 is (space), so that particular character may not be desirable under certain circumstances
+    /**Determines if a string is printable.
+     * Defines a printable string as one composed of only ASCII characters between (and including) 32 and 126.
+     * @param str The string being checked
+     * @return True if the value of EVERY character is greater than or equal to 32 AND less than or equal to 126, false otherwise.
+     */
     public static boolean isPrintable(String str){
         for(int i = 0; i < str.length(); i++){
             if (!isPrintable(str.charAt(i))) return false;
         }
         return true;
     }
+    /**Determines if a character, represented as an integer value, is printable.
+     * Defines a printable character as an ASCII character whose value is greater than or equal to 32 AND less than or equal to 126.
+     * @param c The numerical value of the character being checked; can be passed in as an Integer or a Character (int or char).
+     * @return True if the provided value is in the range defined as "printable", false otherwise.
+     */
     public static boolean isPrintable(int c){
+        // Printable characters range from 32 to 126
+        // Note: 32 is (space), so that particular character may not be desirable under certain circumstances
         return !((c < 32) || (c > 126));
     }
+    
+    /**Determines if a string can be read/written from a file using basic Input/Output streams.
+     * When InputStream.read() is called, a value between 0 and 255 is returned; thus the wrong character will be read back out when a character greater than 255 is written to file.
+     * A string is considered to be "writable" ("readable" is a trait perceived by humans) if the values of all of its characters are between 0 and 255.
+     * @param str The string being checked
+     * @return True if the value of every character in the string is greater than or equal to zero AND less than or equal to 255, false otherwise.
+     */
     public static boolean isWritable(String str){
         for(int i = 0; i < str.length(); i++){
             if (!isWritable(str.charAt(i))) return false;
         }
         return true;
     }
+    /**Determines if a character, represented as an integer value, is "writable".
+     * Defines a writable character as one whose value is greater than or equal to 0 AND less than or equal to 255, the range for which characters can be written to and correctly read from file.
+     * @param c The numerical value of the character being checked; can be passed in as an Integer or a Character (int or char).
+     * @return True if the provided value is in the range defined as "writable", false otherwise.
+     */
     public static boolean isWritable(int c){
         return !((c < 0) || (c > 255));
     }
-    /**Makes sure strings are printable/readable.
+    
+    /**Makes sure strings are printable/readable, useful for when complicated strings are being displayed to the user.
      * If whitespace is printed, whitespace characters will be left as they are;
      *  otherwise, they will be treated as unprintable characters.
      * If unprintable characters are escaped,
