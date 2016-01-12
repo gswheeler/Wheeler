@@ -46,6 +46,9 @@ public class FileHandler {
     public static long deleteRetryInterval = 4*1000;
     public static int deleteDefaultTimeout = 10;
     
+    public static boolean throwOnWriteUnreadableCharacter = true;
+    public static boolean escapeUnprintableCharactersOnWrite = false;
+    
     protected static String wheelerFolder = "C:\\Program Files\\Wheeler";
     private static String wheelerDataFolder(){ return composeFilepath(wheelerFolder, "data"); }
     public static String wheelerBatchFolder(){ return composeFilepath(wheelerDataFolder(), "batch"); }
@@ -822,7 +825,7 @@ public class FileHandler {
     // Write the contents of a StringList to a file
     public static void writeFile(IStringList contents, boolean appendNewlines, String path) throws Exception{
         // Make sure the data is writable
-        ensureDataIsWriteable(contents);
+        if (throwOnWriteUnreadableCharacter) ensureDataIsWriteable(contents);
         
         // Write the file
         FileWriter writer = new FileWriter(path);
@@ -871,7 +874,7 @@ public class FileHandler {
     }
     public static void appendToFile(IStringList contents, boolean appendNewlines, String path) throws Exception{
         // Make sure the data is writable
-        ensureDataIsWriteable(contents);
+        if (throwOnWriteUnreadableCharacter) ensureDataIsWriteable(contents);
         
         // Write the data
         FileWriter writer = new FileWriter(path, true);

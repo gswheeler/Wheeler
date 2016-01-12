@@ -54,13 +54,34 @@ public class FileWriter {
         if (closed) throw new Exception("Tried to write to FileWriter after it was closed");
         
         try{
-            if (!StringHandler.isWritable(strLine))
+            // If we're only writing what we can later read, throw an exception
+            if (FileHandler.throwOnWriteUnreadableCharacter && !StringHandler.isWritable(strLine))
                 throw new Exception("Tried to write non-writable data:\n" + StringHandler.escape(strLine));
+            
+            // Are we appending lines to an existing file? (only relevant for what we're writing to)
             if(appending)
-                if (appender != null) appender.write(strLine);
+                if (appender != null){
+                    // If we're escaping unprintables, make sure they're escaped
+                    if(FileHandler.escapeUnprintableCharactersOnWrite){
+                        // Must always print whitespace or newlines will never be written
+                        appender.write(StringHandler.getPrintable(strLine, true, true));
+                    }else{
+                        // Otherwise, write to file as-is
+                        appender.write(strLine);
+                    }
+                }
                 else throw new Exception("Was appending lines but appender was null");
             else
-                if (writeOut != null) writeOut.write(strLine.getBytes());
+                if (writeOut != null){
+                    // If we're escaping unprintables, make sure they're escaped
+                    if(FileHandler.escapeUnprintableCharactersOnWrite){
+                        // Must always print whitespace or newlines will never be written
+                        writeOut.write(StringHandler.getPrintable(strLine, true, true).getBytes());
+                    }else{
+                        // Otherwise, write to file as-is
+                        writeOut.write(strLine.getBytes());
+                    }
+                }
                 else throw new Exception("Was writing the file in full but writeOut was null");
         }
         catch(Exception e){
@@ -79,13 +100,36 @@ public class FileWriter {
         if (closed) throw new Exception("Tried to write to FileWriter after it was closed");
         
         try{
-            if ((c > 255) || (c < 0))
+            // If we're only writing what we can later read, throw an exception
+            if (FileHandler.throwOnWriteUnreadableCharacter && ((c > 255) || (c < 0)))
                 throw new Exception("Tried to write a character with a value of " + c + ", which cannot be read back out");
+            
+            // Are we appending lines to an existing file? (only relevant for what we're writing to)
             if(appending)
-                if (appender != null) appender.write(c);
+                if(appender != null){
+                    // If we're escaping unprintables, make sure the character is escaped if necessary
+                    if(FileHandler.escapeUnprintableCharactersOnWrite){
+                        // Escape the character as a single-character string,
+                        // must always print whitespace or newlines will never be written
+                        appender.write(StringHandler.getPrintable(String.valueOf((char)c), true, true));
+                    }else{
+                        // Otherwise, write to file as-is
+                        appender.write(c);
+                    }
+                }
                 else throw new Exception("Was appending lines but appender was null");
             else
-                if (writeOut != null) writeOut.write(c);
+                if(writeOut != null){
+                    // If we're escaping unprintables, make sure the character is escaped if necessary
+                    if(FileHandler.escapeUnprintableCharactersOnWrite && !StringHandler.isPrintable(c)){
+                        // Escape the character as a single-character string,
+                        // must always print whitespace or newlines will never be written
+                        writeOut.write(StringHandler.getPrintable(String.valueOf((char)c), true, true).getBytes());
+                    }else{
+                        // Otherwise, write to file as-is
+                        writeOut.write(c);
+                    }
+                }
                 else throw new Exception("Was writing the file in full but writeOut was null");
         }
         catch(Exception e){
