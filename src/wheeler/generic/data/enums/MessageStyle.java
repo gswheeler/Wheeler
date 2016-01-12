@@ -12,5 +12,6 @@ public enum MessageStyle {
     Information,
     Warning,
     Question,
-    Error
+    Error,
+    Plain
 }
