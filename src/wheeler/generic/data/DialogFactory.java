@@ -17,7 +17,7 @@ public class DialogFactory {
     protected DialogFactory(){}
     
     public static String chooseOption(JFrame caller, String[] options, String message){
-        return chooseOption(caller, options, message, "");
+        return chooseOption(caller, options, message, null);
     }
     public static String chooseOption(JFrame caller, String[] options, String message, String title){
         return (String) JOptionPane.showInputDialog(
@@ -31,7 +31,7 @@ public class DialogFactory {
             );
     }
     public static int chooseOptionNumbered(JFrame caller, String[] options, String message){
-        return chooseOptionNumbered(caller, options, message, "");
+        return chooseOptionNumbered(caller, options, message, null);
     }
     public static int chooseOptionNumbered(JFrame caller, String[] options, String message, String title){
         // Insert a number before each option (note: first will be 1 but array uses index-zero)
@@ -46,7 +46,7 @@ public class DialogFactory {
     }
     
     public static int customOption(JFrame caller, String[] options, String message){
-        return customOption(caller, options, message, "");
+        return customOption(caller, options, message, null);
     }
     public static int customOption(JFrame caller, String[] options, String message, String title){
         int value = JOptionPane.showOptionDialog(
@@ -89,13 +89,13 @@ public class DialogFactory {
     }
     
     public static String getString(JFrame caller, String message){
-        return getStringWithDefault(caller, message, "", "");
+        return getStringWithDefault(caller, message, null, null);
     }
     public static String getString(JFrame caller, String message, String title){
-        return getStringWithDefault(caller, message, title, "");
+        return getStringWithDefault(caller, message, title, null);
     }
     public static String getStringWithDefault(JFrame caller, String message, String defStr){
-        return getStringWithDefault(caller, message, "", defStr);
+        return getStringWithDefault(caller, message, null, defStr);
     }
     public static String getStringWithDefault(JFrame caller, String message, String title, String defStr){
         return (String) JOptionPane.showInputDialog(
@@ -110,14 +110,14 @@ public class DialogFactory {
     }
     
     public static boolean optionYesNo(JFrame caller, String message){
-        return optionYesNo(caller, message, "");
+        return optionYesNo(caller, message, null);
     }
     public static boolean optionYesNo(JFrame caller, String message, String title){
         return JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.YES_NO_OPTION);
     }
     
     public static int optionYesNoCancel(JFrame caller, String message){
-        return optionYesNoCancel(caller, message, "");
+        return optionYesNoCancel(caller, message, null);
     }
     public static int optionYesNoCancel(JFrame caller, String message, String title){
         int retVal = JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
@@ -127,14 +127,20 @@ public class DialogFactory {
     }
     
     public static void message(JFrame caller, String message){
-        message(caller, message, "");
+        message(caller, message, (String)null);
+    }
+    public static void message(JFrame caller, String message, MessageStyle style){
+        message(caller, message, null, style);
     }
     public static void message(JFrame caller, String message, String title){
-        JOptionPane.showMessageDialog(caller, message, title, JOptionPane.PLAIN_MESSAGE);
+        message(caller, message, title, MessageStyle.Information);
+    }
+    public static void message(JFrame caller, String message, String title, MessageStyle style){
+        JOptionPane.showMessageDialog(caller, message, null, fromMessageStyle(style));
     }
     
     public static boolean optionOkCancel(JFrame caller, String message){
-        return optionOkCancel(caller, message, "");
+        return optionOkCancel(caller, message, null);
     }
     public static boolean optionOkCancel(JFrame caller, String message, String title){
         return JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(caller, message, title, JOptionPane.OK_CANCEL_OPTION);
@@ -148,7 +154,7 @@ public class DialogFactory {
      * @param indirection number of nested calls between the catch block and the call to this function (zero if called directly from the catch block, negatives don't work)
      */
     public static void errorMsg(JFrame caller, String message, Exception e, int traceLevel, int indirection){
-        message(caller, message + "\n" + LogicHandler.exToString(e, traceLevel, 1 + indirection));
+        message(caller, message + "\n" + LogicHandler.exToString(e, traceLevel, 1 + indirection), MessageStyle.Plain);
     }
     
     /**
@@ -182,10 +188,6 @@ public class DialogFactory {
      */
     public static String getStringFromConsole(){
         return System.console().readLine();
-    }
-    
-    public static void message(JFrame caller, String message, MessageStyle style){
-        JOptionPane.showMessageDialog(caller, message, null, fromMessageStyle(style));
     }
     
     private static int fromMessageStyle(MessageStyle style){
