@@ -5,6 +5,8 @@
 package wheeler.generic.data;
 
 import java.util.concurrent.atomic.AtomicLong;
+import wheeler.generic.data.stringsort.JavaDefault;
+import wheeler.generic.data.stringsort.StringSorter;
 import wheeler.generic.error.QuietException;
 import wheeler.generic.structs.IStringList;
 import wheeler.generic.structs.IStringNode;
@@ -34,7 +36,7 @@ public class StringHandler {
         "a", "b", "c", "d", "e", "f"};
     public static String whitespaceChars = "\r\n\t ";
     
-    public static boolean defaultCaseSensitivity = false;
+    public static StringSorter stringSorter = new JavaDefault(false);
     
     
     
@@ -42,7 +44,7 @@ public class StringHandler {
     
     // 
     public static boolean contains(String subject, String check){
-        return contains(subject, check, defaultCaseSensitivity);
+        return contains(subject, check, stringSorter.caseSensitive);
     }
     @SuppressWarnings("IndexOfReplaceableByContains") // IndexOf tends to work better (don't have to worry about special characters)
     public static boolean contains(String subject, String check, boolean caseSensitive){
@@ -53,17 +55,33 @@ public class StringHandler {
         return (subject.indexOf(check) != -1);
     }
     
+    /**Check to see if the contents of two string objects are equal.
+     *  Treats nulls as legitimate values.
+     *  Uses the current StringSorter's check-case value to determine if case should be considered.
+     * @param subject One string being looked at
+     * @param check The string the first string is being compared to
+     * @return True if both strings are null or non-null and have matching values (after case), false otherwise
+     */
     public static boolean areEqual(String subject, String check){
-        return areEqual(subject, check, defaultCaseSensitivity);
+        return areEqual(subject, check, stringSorter.caseSensitive);
     }
+    /**Check to see if the contents of two string objects are equal. Treats nulls as legitimate values.
+     * @param subject One string being looked at
+     * @param check The string the first string is being compared to
+     * @param caseSensitive Should case differences result in the strings being unequal
+     * @return True if both strings are null or non-null and have matching values (after case), false otherwise
+     */
     public static boolean areEqual(String subject, String check, boolean caseSensitive){
-        if ((subject == null) && (check == null)) return true;
-        if ((subject == null) || (check == null)) return false;
+        if ((subject == null) && (check == null)) return true;  // They are both null, return true
+        if ((subject == null) || (check == null)) return false; // One is null but not both, return false
         
+        // Handle case sensitivity
         if(!caseSensitive){
             subject = subject.toLowerCase();
             check = check.toLowerCase();
         }
+        
+        // Perform the check and return the result
         return subject.equals(check);
     }
     
@@ -72,12 +90,16 @@ public class StringHandler {
     public static String toLowerCase(String subject, boolean preserveEscaped){
         if (!preserveEscaped) return subject.toLowerCase();
         
+        // While there are back-slashes, lowercase them and any preceding characters
+        // while preserving the case of the characters following the slashes
         String processed = "";
         int sIndex;
         while((sIndex = subject.indexOf("\\")) != -1){
             // Add all characters up to and including the first slash
             processed += subject.substring(0, sIndex + 1).toLowerCase();
+            // Remove these characters from the string
             subject = subject.substring(sIndex + 1);
+            
             // If there are characters after the slash, add the first one
             // (understood as the escaped character that must be preserved)
             if(subject.length() > 0){
@@ -101,36 +123,18 @@ public class StringHandler {
     // Remove specified characters from the end of a string
     public static String trimTrailingCharacters(String str, String targets){
         if (str == null) return null;
-        targets = targets.toLowerCase();
-        while(true){
-            boolean trim = false;
-            for(int i = 0; i < targets.length(); i++){
-                if(str.toLowerCase().endsWith(charAt(targets, i))){
-                    trim = true;
-                    break;
-                }
-            }
-            if (!trim) return str;
+        while(str.length() > 0 && contains(targets, charAt(str, str.length()-1), false))
             str = str.substring(0, str.length()-1);
-        }
+        return str;
     }
     
     
     // Remove specified characters from the start of a string
     public static String trimLeadingCharacters(String str, String targets){
         if (str == null) return null;
-        targets = targets.toLowerCase();
-        while(true){
-            boolean trim = false;
-            for(int i = 0; i < targets.length(); i++){
-                if(str.toLowerCase().startsWith(charAt(targets, i))){
-                    trim = true;
-                    break;
-                }
-            }
-            if (!trim) return str;
+        while (str.length() > 0 && contains(targets, charAt(str, 0), false))
             str = str.substring(1);
-        }
+        return str;
     }
     
     
@@ -155,9 +159,10 @@ public class StringHandler {
         return trim(subject, whitespaceChars);
     }
     public static String trim(String subject, String targets){
-        while (subject.length() > 0 && contains(targets, charAt(subject, 0), true))
-            subject = subject.substring(1);
-        return trimTrailingCharacters(subject, targets);
+        return trimTrailingCharacters(
+                trimLeadingCharacters(subject, targets),
+                targets
+            );
     }
     
     
@@ -315,14 +320,14 @@ public class StringHandler {
             bytes = bytes / 1024.0;
             index++;
         }
-        int strLen = (bytes < 100.0) ? 4 : 3;                // Format is either 100, 99.9, or 0.00
+        int strLen = (bytes < 100.0) ? 4 : 3;           // Format is either 100, 99.9, or 0.00
         String byteStr = Double.toString(bytes);
-        if (byteStr.indexOf(".") == -1) byteStr += ".00";    // Make sure trailing decimals are in place
-        byteStr = (byteStr.length() > strLen)
+        if (!contains(byteStr, ".")) byteStr += ".00";  // Make sure trailing decimals are in place, whether they are needed or not
+        byteStr = (byteStr.length() > strLen)           // Remove unnecessary digits as well as the decimal point if appropriate
                 ? byteStr.substring(0, strLen)
                 : byteStr;
         // Don't bother with a decimal if we're dealing with raw bytes
-        if ((index == 0) && (byteStr.indexOf(".") != -1)) byteStr = byteStr.substring(0, byteStr.indexOf("."));
+        if ((index == 0) && (contains(byteStr, "."))) byteStr = byteStr.substring(0, byteStr.indexOf("."));
         return byteStr + " " + suffixes[index];
     }
     
@@ -363,48 +368,23 @@ public class StringHandler {
     
     
     // Compare two strings; -1 if the first comes first, +1 if the second comes first, 0 if they are the same
-    public static boolean strAbeforeB(String sA, String sB){ return compareStrings(sA, sB) < 0; }
-    public static boolean strAafterB(String sA, String sB){ return compareStrings(sA, sB) > 0; }
-    public static int compareStrings(String sA, String sB){
-        indexA = 0; indexB = 0; strA = sA; strB = sB;
-        while(true){
-            String cA = getStrAChar(); String cB = getStrBChar();
-            if((cA == null) && (cB == null)){ return 0; }
-            if(cA == null){ return -1; } if(cB == null){ return 1; }
-            int aVal = getCharValue(cA); int bVal = getCharValue(cB);
-            if(aVal < bVal){ return -1; } if(aVal > bVal){ return 1; }
-        }
-        //throw new Exception("Inconclusive comparison between strings \"" + sA + "\" and \"" + sB + "\"");
-    }
-    private static String[] charArray = {".", "!", "#", "$", "%", "&", "(", ")", ",", ";", "@", "[", "]", "^", "_", "`", "{", "}", "~", "'", "-",
-                                            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h",
-                                            "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
-    private static String[] skipChars = {"'", "-"};
-    private static int indexA = 0;
-    private static int indexB = 0;
-    private static String strA = null;
-    private static String strB = null;
-    private static String getStrAChar(){
-        if(indexA == strA.length()){ return null; }
-        String c = strA.substring(indexA++, indexA);
-        if(isSkipChar(c)){ c = getStrAChar(); }
-        return c;
-    }
-    private static String getStrBChar(){
-        if(indexB == strB.length()){ return null; }
-        String c = strB.substring(indexB++, indexB);
-        if(isSkipChar(c)){ c = getStrBChar(); }
-        return c;
-    }
-    private static int getCharValue(String c){
-        for(int i = 0; i < charArray.length; i++)
-            if (charArray[i].equalsIgnoreCase(c)) return i;
-        return -1;
-    }
-    private static boolean isSkipChar(String c){
-        for(int i = 0; i < skipChars.length; i++)
-            if (skipChars[i].equalsIgnoreCase(c)) return true;
-        return false;
+    
+    /**Does the first string come before the second?
+     * @param strA The first string
+     * @param strB The second string
+     * @return True if the first string comes before the second, false otherwise
+     */
+    public static boolean strAbeforeB(String strA, String strB){ return compareStrings(strA, strB) < 0; }
+    
+    /**Does the first string come after the second?
+     * @param strA The first string
+     * @param strB The second string
+     * @return True if the first string comes after the second, false otherwise
+     */
+    public static boolean strAafterB(String strA, String strB){ return compareStrings(strA, strB) > 0; }
+    
+    public static int compareStrings(String strA, String strB){
+        return stringSorter.compareStrings(strA, strB);
     }
     
     
@@ -412,25 +392,84 @@ public class StringHandler {
     // Note: 32 is (space), so that particular character may not be desirable under certain circumstances
     public static boolean isPrintable(String str){
         for(int i = 0; i < str.length(); i++){
-            char val = str.charAt(i);
-            if ((val < 32) || (val > 126)) return false;
+            if (!isPrintable(str.charAt(i))) return false;
         }
         return true;
+    }
+    public static boolean isPrintable(int c){
+        return !((c < 32) || (c > 126));
     }
     public static boolean isWritable(String str){
         for(int i = 0; i < str.length(); i++){
-            char val = str.charAt(i);
-            if ((val < 0) || (val > 255)) return false;
+            if (!isWritable(str.charAt(i))) return false;
         }
         return true;
     }
-    public static String getPrintable(String str){
+    public static boolean isWritable(int c){
+        return !((c < 0) || (c > 255));
+    }
+    /**Makes sure strings are printable/readable.
+     * If whitespace is printed, whitespace characters will be left as they are;
+     *  otherwise, they will be treated as unprintable characters.
+     * If unprintable characters are escaped,
+     *  carriage returns, newlines, and tabs will be replaced with \r, \n, and \t (unless whitespace is being printed),
+     *  unprintable characters with values less than 256 will have their hexadecimal values printed as %hh,
+     *  and all other unprintable characters will have their hexadecimal values printed as xhhhh;
+     *  otherwise, they will all be removed from the string.
+     * Please note: this is not the same as the escape-string function;
+     *  the strings produced here cannot be un-escaped and should only be used for making strings human-readable.
+     * @param str The string to make readable
+     * @param printWhitespace Should special whitespace characters (such as newlines and tabs) be printed as whitespace?
+     * @param escapeUnprintable Should unprintable characters be escaped or simply dropped?
+     * @return The provided string with unprintable characters dropped or escaped
+     */
+    public static String getPrintable(String str, boolean printWhitespace, boolean escapeUnprintable){
+        // Quick check for a no-op string
         if (isPrintable(str)) return str;
+        
+        // For each character, append to the result as appropriate
         String result = "";
         for(int i = 0; i < str.length(); i++){
-            char val = str.charAt(i);
-            if ((val < 32) || (val > 126)) continue;
-            result += charAt(str, i);
+            // Get the character and its numeric value
+            String c = charAt(str, i);
+            int val = str.charAt(i);
+            
+            // If it's printable, just append it
+            if(isPrintable(c)){
+                result += c;
+                continue;
+            }
+            
+            // If it's whitespace and we're printing whitespace as-is, append it
+            if(printWhitespace && contains(whitespaceChars, c)){
+                result += c;
+                continue;
+            }
+            
+            // It's unprintable; if we aren't escaping values, don't add anything
+            if (!escapeUnprintable) continue;
+            
+            // Otherwise, append the character's value as a string
+            if(areEqual(c, "\r")){
+                result += "\\r";
+            }else if(areEqual(c, "\n")){
+                result += "\\n";
+            }else if(areEqual(c, "\t")){
+                result += "\\t";
+            }
+            else if(val < 256){
+                // %hh
+                result += "%";
+                result += hexadecimal[val / 16];
+                result += hexadecimal[val % 16];
+            }else{
+                // xhhhh
+                result += "x";
+                result += hexadecimal[val / 4096]; // Char values should never exceed 65,535 ((4096 * 16) - 1). If they do, this will throw an error
+                result += hexadecimal[(val / 256) % 16];
+                result += hexadecimal[(val / 16) % 16];
+                result += hexadecimal[val % 16];
+            }
         }
         return result;
     }
@@ -478,14 +517,14 @@ public class StringHandler {
             throw new Exception("Tried to unescape a string that wasn't even printable:\n" + str);
         String result = "";
         while(str.length() > 0){
-            String unescape = unescapeChar(str); // Get actualChar+escapedChar
+            String unescape = unescapeWorker(str); // Get actualChar+escapedChar
             result += unescape.substring(0, 1);  // Append the actualChar (the first character)
             str = str.substring(unescape.length()-1); // The remainder is to be removed from the string
         }
         return result;
     }
-    // Return a string compsed of the next unescaped character followed by its escaped form
-    protected static String unescapeChar(String str){
+    // Return a string compsed of the next unescaped character followed by how it was stored in the escaped string
+    protected static String unescapeWorker(String str){
         // Double-escaped marker characters
         if (str.startsWith("##")) return "###";
         if (str.startsWith("%%")) return "%%%";
@@ -517,37 +556,9 @@ public class StringHandler {
     }
     
     
-    
-    // Look through a string for characters that are not readily visible and replace them with their plaintext counterparts
-    public static String[] specialsWithReadable = {
-        "\r\\r",
-        "\n\\n",
-        "\t\\t"
-    };
-    public static String toReadable(String str){
-        if (str == null) return "(null)";
-        if (str.length() == 0) return "\"\"";
-        String result = "";
-        for(int i = 0; i < str.length(); i++){
-            // Look at each character in the string
-            String subject = charAt(str, i);
-            for(int j = 0; j < specialsWithReadable.length; j++){
-                // If the "character" part of an array string matches the character, replace it with the "plaintext" component
-                if(subject.equals(charAt(specialsWithReadable[j], 1))){
-                    subject = specialsWithReadable[j].substring(1);
-                    break;
-                }
-            }
-            // Either we didn't find any matches or we found one and replaced the character with its counterpart
-            result += subject;
-        }
-        return result;
-    }
-    
-    
     // Is the string empty? Specify if whitespace is to be discounted
     public static boolean isEmpty(String str, boolean ignoreWhitespace){
-        // If it's empty, true. If not, false if whitespace counts
+        // If it's empty, true. If not, always false if whitespace counts
         if (str.length() == 0) return true;
         if (!ignoreWhitespace) return false;
         
