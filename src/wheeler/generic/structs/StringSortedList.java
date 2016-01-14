@@ -106,7 +106,7 @@ public class StringSortedList implements IStringList {
     public boolean contains(String value){
         recalibrateIndex(false);
         StringLinkNode node = getNodeBefore(value, true);
-        return StringHandler.areEqual(node.value, value, false);
+        return StringHandler.areEqual(node.value, value);
     }
     
     
@@ -121,7 +121,7 @@ public class StringSortedList implements IStringList {
             // If the string comes before (and is not) the value of this node, no more matches
             if (node.beforeThis(value, false)) break;
             // Otherwise, the string is held by this node
-            if (StringHandler.areEqual(node.value, value, false)) count++;
+            if (StringHandler.areEqual(node.value, value)) count++;
         }
         return count;
     }
@@ -148,7 +148,7 @@ public class StringSortedList implements IStringList {
         int count = 0;
         for(int i = 0; i < strs.length; i++){
             // While there are nodes to consider and they match the string to remove, remove them
-            while(node.next != null && StringHandler.areEqual(node.next.value, strs[i], false)){
+            while(node.next != null && StringHandler.areEqual(node.next.value, strs[i])){
                 // See if there are nodes being removed that have an entry in the index
                 if (node.next.chainIndexSet()) needRecalibrate = true;
                 // Have node.next swallow itself; it will set all values for node and node.next.next

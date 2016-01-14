@@ -4,7 +4,7 @@
  */
 package wheeler.generic.structs;
 
-import wheeler.generic.data.LogicHandler;
+import wheeler.generic.data.MathHandler;
 import wheeler.generic.data.StringHandler;
 import wheeler.generic.error.QuietException;
 
@@ -61,7 +61,7 @@ public class StringList implements IStringList {
     public String[] getArray(int size){return getArray(size, 0);}
     public String[] getArray(int size, int offset){
         // Create and populate an array of appropriate size
-        String[] result = new String[LogicHandler.min(size, length() - offset)];
+        String[] result = new String[MathHandler.min(size, length() - offset)];
         StringNode node = listHeader.next;
         for(int i = 0; i < offset; i++) node = node.next;
         for(int i = 0; i < result.length; i++){
@@ -98,7 +98,7 @@ public class StringList implements IStringList {
         // Grab the nodes and put their values into an array
         String[] result = new String[numNodes];
         node = firstNode;
-        for(int i = 0; i < result.length; i++){
+        for(int i = 0; (i < result.length) && (node != null); i++){
             result[i] = node.getValue();
             node = node.getNext();
         }
@@ -270,7 +270,7 @@ public class StringList implements IStringList {
         // Look for the string
         StringNode node = listHeader;
         while(node.next != null){
-            if (StringHandler.areEqual(node.next.value, str, false)) return false;
+            if (StringHandler.areEqual(node.next.value, str)) return false;
             node = node.next;
         }
         
@@ -323,7 +323,7 @@ public class StringList implements IStringList {
         // Count all matching nodes
         StringNode node = listHeader; int count = 0;
         while((node = node.next) != null){
-            if (StringHandler.areEqual(node.value, str, false)) count++;
+            if (StringHandler.areEqual(node.value, str)) count++;
         }
         return count;
     }
@@ -346,7 +346,7 @@ public class StringList implements IStringList {
             // Does the next string match any of the strings we are removing?
             boolean matchFound = false;
             for(String str : strs){
-               if(node.next.value.equalsIgnoreCase(str)){
+               if(StringHandler.areEqual(node.next.value, str)){
                    matchFound = true;
                    break;
                }
@@ -385,7 +385,7 @@ public class StringList implements IStringList {
         // Cut out the first node that matches
         StringNode node = listHeader;
         while(node.next != null){
-            if(node.next.value.equalsIgnoreCase(str)){
+            if(StringHandler.areEqual(node.next.value, str)){
                 node.next = node.next.next;
                 return true;
             }else{
@@ -460,7 +460,7 @@ public class StringList implements IStringList {
         // Look for a match
         StringNode node = listHeader;
         while((node = node.next) != null){
-            if (StringHandler.areEqual(str, node.value, false)) return true;
+            if (StringHandler.areEqual(str, node.value)) return true;
         }
         return false;
     }
@@ -505,7 +505,7 @@ public class StringList implements IStringList {
                 return false;
             
             // Check if the nodes have different values
-            if (!StringHandler.areEqual(thisNode.getValue(), thatNode.getValue(), false))
+            if (!StringHandler.areEqual(thisNode.getValue(), thatNode.getValue()))
                 return false;
             
             // Both nodes had values, said values matched, move on to the next pair of nodes

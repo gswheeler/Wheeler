@@ -5,6 +5,7 @@
 package wheeler.generic.structs;
 
 import wheeler.generic.data.LogicHandler;
+import wheeler.generic.data.MathHandler;
 
 /**
  * A list optimized for gathering strings and then returning an array or StringList (simple in function, not structure).
@@ -116,7 +117,7 @@ public class StringSimpleList implements IStringList {
         for(int i = 0; i < result.length; i++) result[result.length - i - 1] = list.get();
         list.get(); // Drop that last null
         */
-        size = LogicHandler.min(size, list.length());
+        size = MathHandler.min(size, list.length());
         return LogicHandler.reverseArray(list.getArray(size, list.length() - size));
     }
     

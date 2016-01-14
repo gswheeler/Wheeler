@@ -59,13 +59,13 @@ public class StringLinkNode implements IStringNode {
     // Does the given string come after the value in this node?
     public boolean afterThis(String str, boolean includeMatch){
         if (value == null) return true;
-        if (includeMatch && StringHandler.areEqual(value, str, false)) return true;
+        if (includeMatch && StringHandler.areEqual(value, str)) return true;
         return StringHandler.strAafterB(str, value);
     }
     // Does the given string come before the value in this node?
     public boolean beforeThis(String str, boolean includeMatch){
         if (value == null) return false;
-        if (includeMatch && StringHandler.areEqual(value, str, false)) return true;
+        if (includeMatch && StringHandler.areEqual(value, str)) return true;
         return StringHandler.strAbeforeB(str, value);
     }
     
