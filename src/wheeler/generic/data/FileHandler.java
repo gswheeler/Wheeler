@@ -18,6 +18,7 @@ import wheeler.generic.data.readers.FileReader;
 import wheeler.generic.data.readers.FileWriter;
 import wheeler.generic.error.AggregateException;
 import wheeler.generic.error.LogicException;
+import wheeler.generic.error.QuietException;
 import wheeler.generic.logging.Logger;
 import wheeler.generic.structs.IStringList;
 import wheeler.generic.structs.IStringNode;
@@ -50,8 +51,25 @@ public class FileHandler {
     public static boolean escapeUnprintableCharactersOnWrite = false;
     
     protected static String wheelerFolder = "C:\\Program Files\\Wheeler";
-    private static String wheelerDataFolder(){ return composeFilepath(wheelerFolder, "data"); }
+    protected static boolean wheelerFolderTested = false;
+    private static String wheelerDataFolder(){
+        if(!wheelerFolderTested){
+            try{
+                testProgramFolder(wheelerFolder, null);
+                wheelerFolderTested = true;
+            }
+            catch(Exception e){
+                throw new QuietException(
+                        "Failed to access the base Wheeler folder.\nPlease make sure"
+                        + "\n" + wheelerFolder
+                        + "\nexists and the Users group has full control under Properties > Security."
+                    );
+            }
+        }
+        return composeFilepath(wheelerFolder, "data");
+    }
     public static String wheelerBatchFolder(){ return composeFilepath(wheelerDataFolder(), "batch"); }
+    public static String wheelerMathFolder(){ return composeFilepath(wheelerDataFolder(), "math"); }
     
     
     
