@@ -27,92 +27,31 @@ import wheeler.generic.structs.StringList;
  */
 public class LogicHandler {
     
-    public static int max(int iA, int iB){
-        return (iA > iB) ? iA : iB;
-    }
-    
-    
-    public static int min(int iA, int iB){
-        return (iA < iB) ? iA : iB;
-    }
-    
-    
-    public static String resolveNull(String strA, String strB){
-        return (strA != null) ? strA : strB;
-    }
-    
-    
-    public static int greedyDivision(int number, int divisor){
-        int offset = (number % divisor > 0) ? 1 : 0;
-        return (number / divisor) + offset;
-    }
-    public static long greedyDivision64(long number, long divisor){
-        long offset = (number % divisor > 0) ? 1 : 0;
-        return (number / divisor) + offset;
-    }
-    
-    
-    public static int exp(int base, int pwr){
-        int result = 1;
-        for (int i = 0; i < pwr; i++) result *= base;
-        return result;
-    }
-    public static long exp64(long base, long pwr){
-        long result = 1;
-        for (long i = 0; i < pwr; i++) result *= base;
-        return result;
-    }
-    
-    
-    // Convert between bases
-    public static int[] convertBase(int[] value, int startBase, int newBase){
-        // No easy way around this; convert to long, convert back
-        long rawValue = 0;
-        for(int i = 0; i < value.length; i++)
-            rawValue += ((long)value[i]) * exp64(startBase, i);
-        return convertBase(rawValue, newBase);
-    }
-    public static int[] convertBase(long value, int newBase){
-        // How many spaces do we need?
-        // Binary: 2 needs 2, 3 needs 2, 4 needs 3, 5 needs 3
-        int pwrs = 1;
-        while (exp64(newBase, pwrs) < value) pwrs++;
-        
-        // Start converting
-        int[] result = new int[pwrs];
-        for(int i = 0; i < pwrs; i++)
-            result[pwrs - i - 1] = (int)((value / exp64(newBase,i)) % (long)newBase);
-        
-        return result;
-    }
-    
-    
-    public static long negate(int value){
-        if (value == Integer.MIN_VALUE)
-            throw new QuietException("Tried to negate " + value + ", which is not bitwise possible");
-        return ((-1)*value);
-    }
-    public static long negate64(long value){
-        if (value == Long.MIN_VALUE)
-            throw new QuietException("Tried to negate " + value + ", which is not bitwise possible");
-        return (((long)(-1))*value);
-    }
-    
-    
+    /**Have the current thread sleep for a bit.
+     * Captures and logs exceptions.
+     * Does not trigger "sleep called in a loop" warnings.
+     * @param millis The number of milliseconds to sleep for.
+     */
     public static void sleep(long millis){
         if (millis < 0) return;
         try{
             Thread.sleep(millis);
         }
         catch(Exception e){
-            // TODO: Log this
-            System.out.println("Sleep encountered an error: " + e.toString());
+            // Hopefully this never gets called; if it's in a loop the log will likely fill up fast
+            Logger.error("Thread.sleep threw an error", e, 1, 0);
         }
     }
     
     
-    public static void startThread(Runnable runner){
-        (new Thread(runner)).start();
+    /**Kicks off a runnable object to run in its own thread
+     * @param runner The runnable object whose run() function is to be run in its own thread
+     * @return A reference to the thread running the runnable object
+     */
+    public static Thread startThread(Runnable runner){
+        Thread thread = new Thread(runner);
+        thread.start();
+        return thread;
     }
     
     
@@ -210,16 +149,18 @@ public class LogicHandler {
     
     public static String[] addToArray(String[] array, String item){
         String[] newArray = new String[array.length + 1];
-        for (int i = 0; i < array.length; i++) newArray[i] = array[i];
-        newArray[array.length] = item;
+        int index;
+        for (index = 0; index < array.length; index++) newArray[index] = array[index];
+        newArray[index] = item;
         return newArray;
     }
     
     
     public static int[] addToArray(int[] array, int item){
         int[] newArray = new int[array.length + 1];
-        for (int i = 0; i < array.length; i++) newArray[i] = array[i];
-        newArray[array.length] = item;
+        int index;
+        for (index = 0; index < array.length; index++) newArray[index] = array[index];
+        newArray[index] = item;
         return newArray;
     }
     
@@ -235,21 +176,21 @@ public class LogicHandler {
     public static String[] concatArrays(String[] arrayA, String[] arrayB){
         String[] newArray = new String[arrayA.length + arrayB.length];
         int arrayIndex = 0;
-        for (int i = 0; i < arrayA.length; i++) newArray[arrayIndex++] = arrayA[i];
-        for (int i = 0; i < arrayB.length; i++) newArray[arrayIndex++] = arrayB[i];
+        for (String item : arrayA) newArray[arrayIndex++] = item;
+        for (String item : arrayB) newArray[arrayIndex++] = item;
         return newArray;
     }
     
     
     public static String[] concatArrays(String[][] arrays){
         // Get the total length
-        int length = 0; for (int i = 0; i < arrays.length; i++) length += arrays[i].length;
+        int length = 0; for (String[] array : arrays) length += array.length;
         String[] newArray = new String[length];
         
         int arrayIndex = 0;
-        for(int i = 0; i < arrays.length; i++){
-            for (int j = 0; j < arrays[i].length; j++)
-                newArray[arrayIndex++] = arrays[i][j];
+        for(String[] array : arrays){
+            for (String item : array)
+                newArray[arrayIndex++] = item;
         }
         return newArray;
     }
@@ -262,32 +203,40 @@ public class LogicHandler {
     }
     
     
-    public static boolean arrayContains(String[] array, String item, boolean caseMatters){
-        for(int i = 0; i < array.length; i++){
-            if((array[i] == null) && (item == null)) return true;
-            if((array[i] == null) || (item == null)) continue;
-            if(caseMatters){
-                if(array[i].equals(item)) return true;
-            }else{
-                if(array[i].equalsIgnoreCase(item)) return true;
-            }
+    public static boolean arrayContains(String[] array, String str, boolean caseSensitive){
+        for(String item : array){
+            if (StringHandler.areEqual(item, str, caseSensitive)) return true;
         }
         return false;
     }
     
     
-    public static String[] makeSingularArray(String str){ String[] array = new String[1]; array[0] = str; return array;}
+    public static String[] createSingularArray(String str){
+        String[] array = new String[1]; array[0] = str; return array;
+    }
+    
+    
+    /**Create an array by copying the contents of an existing array.
+     * Does not incur the "use System.arraycopy" warning.
+     * @param array The array whose data is to be copied into the new array
+     * @return An array with the same data as the original
+     */
+    public static String[] duplicateArray(String[] array){
+        String[] result = new String[array.length];
+        int index = 0;
+        for (String str : array) result[index++] = str;
+        return result;
+    }
     
     
     // Shuffle an array of strings
     public static String[] shuffleArray(String[] array){
-        String[] result = new String[array.length];
-        for (int i = 0; i < array.length; i++) result[i] = array[i];
+        String[] result = duplicateArray(array);
         for(int i = 0; i < array.length - 1; i++){
             // Randomly populate each index with one of the values of the array not already chosen.
             // With each index, the remaining "pool" will be all values at or after the index.
             // Skip the last index; will only have the one value to choose from.
-            swap(result, i, getRandomNumber(i, result.length - 1));
+            swap(result, i, MathHandler.getRandomNumber(i, result.length - 1));
         }
         return result;
     }
@@ -297,12 +246,6 @@ public class LogicHandler {
         String swap = array[pos1]; // Store A
         array[pos1] = array[pos2]; // B to A
         array[pos2] = swap;        // A to B
-    }
-    
-    
-    public static int getRandomNumber(int range){ return getRandomNumber(0,range-1); }
-    public static int getRandomNumber(int lowerBound, int upperBound){
-        return ((int) (Math.random() * (upperBound - lowerBound + 1))) + lowerBound;
     }
     
     
@@ -398,6 +341,7 @@ public class LogicHandler {
     /**Get the method signature of the function that called this one
      * @param indirection Zero if the method with the desired signature calls this function directly, otherwise the number of calls between that method and the call to this one
      * @return The period-delineated classpath of the method's containing class, followed by a period and the method name
+     * @throws Exception Not explicit, but it's best that we not assume here given that this is often called in error-recovery situations.
      */
     public static String getCallingMethod(int indirection) throws Exception{
         StackTraceElement[] ste = Thread.currentThread().getStackTrace();
