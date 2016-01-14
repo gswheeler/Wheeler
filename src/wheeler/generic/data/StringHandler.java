@@ -307,7 +307,7 @@ public class StringHandler {
         }
         
         // Return the sign, the leading digits, the digits preceded by commas, and the decimal
-        return number + formatted + decimal;
+        return sign + number + formatted + decimal;
     }
     
     
@@ -336,6 +336,31 @@ public class StringHandler {
         String result = Integer.toString(number);
         for (int i = result.length(); i < minSize; i++) result = "0" + result;
         return result;
+    }
+    
+    
+    /**Convert a number to an alphanumeric string unique to that number.
+     * Takes the base-ten system and converts the number to a base-36 string (the ten integers followed by the 26 letters).
+     * If the number is a negative, converts to a positive and adds a leading zero.
+     * @param num The number to convert
+     * @return The provided number represented as base-36 characters (numerical and alphabetical)
+     */
+    public static String toAlphanumeric(long num){
+        if (num == 0) return "0";
+        if (num == Long.MIN_VALUE) return "01y2p0ij32e8e8";
+        
+        // A hyphen is not alphanumeric; if the number is a negative, use a leading zero instead (only zero starts with 0, and that can't be negative)
+        String lead = "";
+        if(num < 0){ lead = "0"; num = MathHandler.negate64(num); }
+        
+        // Starting from the ones slot, modulus by the base and add the appropriate character
+        String result = "";
+        long base = StringHandler.alphaNumeric.length;
+        while(num > 0){
+            result = StringHandler.alphaNumeric[(int)(num % base)] + result;
+            num = num / base;
+        }
+        return lead + result;
     }
     
     
@@ -540,11 +565,11 @@ public class StringHandler {
     
     
     // Unescape one of our escaped strings. Will allow index and fail-to-cast errors to check for integrity
-    public static String unescape(String str) throws Exception{
+    public static String unescape(String str){
         if (str.equals("%n")) return null;
         if (str.equals("%e")) return "";
         if (!isPrintable(str))
-            throw new Exception("Tried to unescape a string that wasn't even printable:\n" + str);
+            throw new QuietException("Tried to unescape a string that wasn't even printable:\n" + str);
         String result = "";
         while(str.length() > 0){
             String unescape = unescapeWorker(str); // Get actualChar+escapedChar
@@ -659,7 +684,7 @@ public class StringHandler {
         if(_alphaNumericPid == null){
             LogicHandler.lock("_alphaNumericPid", 10);
             if (_alphaNumericPid == null)
-                _alphaNumericPid = toAlphaNumeric(LogicHandler.getProcessId());
+                _alphaNumericPid = toAlphanumeric(LogicHandler.getProcessId());
             LogicHandler.release("_alphaNumericPid", 10);
         }
         if(_iteratingTick == null){
@@ -671,39 +696,8 @@ public class StringHandler {
         return
             _alphaNumericPid
             + _uniqueStringDivider
-            + toAlphaNumeric(_iteratingTick.getAndIncrement());
+            + toAlphanumeric(_iteratingTick.getAndIncrement());
     }
     public static void setUniqueStringDivider(String divider){ _uniqueStringDivider = divider; }
-    
-    
-    // Convert a number to an alphanumeric string
-    public static String toAlphaNumeric(long num){
-        //String numStr = Long.toString(num);
-        //int[] numArray = new int[numStr.length()];
-        //for(int i = 0; i < numStr.length(); i++)
-        //    Integer.valueOf(numStr.substring(i,i+1));
-        //int[] newArray = convertBase(numArray, 10, 36);
-        
-        //int[] array = LogicHandler.convertBase(num, 36);
-        //String newStr = "";
-        //for(int i = 0; i < array.length; i++)
-        //    newStr += (array[i] < 10)
-        //            ? Integer.toString(array[i])
-        //            : StringHandler.alphaArray[array[i] - 10];
-        //return newStr;
-        
-        // Just make use of our alphaArray and the digits 0-9
-        long base = 10 + alphaArray.length;
-        if (num == 0) return "0";
-        String result = "";
-        // A hyphen is not alphanumeric; use a leading zero instead (cannot lead-zero nothing or zero)
-        if(num < 0){ result = "0"; num = LogicHandler.negate64(num); }
-        while(num > 0){
-            int i = (int)(num % base);
-            result = ((i < 10) ? Integer.toString(i) : alphaArray[i-10]) + result;
-            num = num / base;
-        }
-        return result;
-    }
     
 }
