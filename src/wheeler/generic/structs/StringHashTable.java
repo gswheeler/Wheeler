@@ -15,7 +15,7 @@ public class StringHashTable {
     /// Constructors
     public StringHashTable(int hashSize){
         if (hashSize < 1)
-            throw new QuietException("Must supply a hashkey greater than or equal to 1");
+            throw new QuietException("Must supply a hashkey greater than or equal to 1 (was " + hashSize + ")");
         lists = new StringList[hashSize];
         for(int i = 0; i < lists.length; i++){
             lists[i] = new StringList();
@@ -25,8 +25,11 @@ public class StringHashTable {
     
     
     /// Variables
+    /** A list of StringLists that contains the values stored in the object */
     private StringList[] lists = null;
+    /** Internal value used by the Get function. Contains the index of the next list to iterate through */
     private int getIndex = 0;
+    /** Internal value used by the Get function. Points to the next StringNode to collect a value from */
     private StringNode getNode = null;
     
     
@@ -64,28 +67,35 @@ public class StringHashTable {
     }
     
     
-    // Get the values out of the collection iterator-style
+    /**Returns the strings stored in the table iterator-style
+     * @return The next string in the dictionary, null if the last string was returned by the previous call or if the table is empty.
+     */
     public String get(){
-        // If we've got a "get" node in play, advance it and return its value
-        if(getNode != null){
-            String result = getNode.value;
-            getNode = getNode.next;
-            return result;
+        // Loop until we find a legitimate node or run out of lists to check
+        while(true){
+            // If the "get" node has a value, grab it and advance the node
+            if(getNode != null){
+                String result = getNode.value;
+                getNode = getNode.next;
+                return result;
+            }
+
+            // If the index is invalid, should be an indication that all values have been returned and it's time for a null
+            if(getIndex > lists.length - 1){
+                resetGet();
+                return null;
+            }
+
+            // If we've reached this point, we need to get a "get" node from the next list
+            // Get the first node from the list our index is pointing at, advance the index, and loop back to the "get" check
+            getNode = lists[getIndex].getHeader().next;
+            getIndex++;
         }
-        
-        // If the index is invalid, should be an indication that all values have been returned and it's time for a null
-        if(getIndex < 0 || getIndex == lists.length){
-            resetGet(); return null;
-        }
-        
-        // If we've reached this point, we need to get a "get" node from the next list
-        // Get the first node from the list our index is pointing at, advance the index, and loop back to the "get" check
-        getNode = lists[getIndex].getHeader().next;
-        getIndex++;
-        return get();
     }
+    /** Resets the Get function to start returning values from the beginning */
     public void resetGet(){
-        getIndex = 0; getNode = null;
+        getIndex = 0;
+        getNode = null;
     }
     
     
@@ -99,7 +109,7 @@ public class StringHashTable {
     
     
     // Hash function
-    private int hash(String str){
+    protected int hash(String str){
         return hash(str, lists.length);
     }
     public static int hash(String str, int hash){
