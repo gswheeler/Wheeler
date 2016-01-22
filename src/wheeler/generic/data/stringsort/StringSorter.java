@@ -13,12 +13,17 @@ public abstract class StringSorter {
     
     /**Constructor for the StringSort base class.
      * @param checkCase Is the operation case-sensitive?
+     * @param allowNulls Should the base StringSorter class handle nulls directly?
      */
-    protected StringSorter(boolean checkCase){
+    protected StringSorter(boolean checkCase, boolean allowNulls){
         caseSensitive = checkCase;
+        handleNulls = allowNulls;
     }
     
+    /** Determines whether case should be considered when the strings are compared. If false, both will be set to lowercase */
     public boolean caseSensitive;
+    /** Should nulls be handled directly? If false, nulls will be passed to the inheriting class. */
+    public boolean handleNulls;
     
     /**Compares two strings to see which comes before the other (if such is the case).
      * @param strA The string against which the second string is compared
@@ -26,10 +31,18 @@ public abstract class StringSorter {
      * @return -1 if the first string before the second, 1 if it comes after, or 0 if the two are relationally equal
      */
     public int compareStrings(String strA, String strB){
+        // If we're handling nulls directly, do so here
+        if(handleNulls){
+            // Logic: an empty bucket weighs more than a missing one
+            if ((strA == null) && (strB == null)) return 0;
+            if (strA == null) return -1;
+            if (strB == null) return 1;
+        }
+        
         // If the operation isn't case-sensitive, make both strings lower-case before comparing them.
         if(!caseSensitive){
-            strA = strA.toLowerCase();
-            strB = strB.toLowerCase();
+            if (strA != null) strA = strA.toLowerCase();
+            if (strB != null) strB = strB.toLowerCase();
         }
         
         // Run the check

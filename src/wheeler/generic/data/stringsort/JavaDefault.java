@@ -11,7 +11,10 @@ package wheeler.generic.data.stringsort;
 public class JavaDefault extends StringSorter{
     
     public JavaDefault(boolean checkCase){
-        super(checkCase);
+        this(checkCase, false);
+    }
+    public JavaDefault(boolean checkCase, boolean allowNulls){
+        super(checkCase, allowNulls);
     }
     
     @Override

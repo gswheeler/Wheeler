@@ -17,7 +17,14 @@ public class WindowsExplorer extends StringSorter{
      * @param checkCase Should case be considered when sorting strings?
      */
     public WindowsExplorer(boolean checkCase){
-        super(checkCase);
+        this(checkCase, false);
+    }
+    /**The StringSorter subclass used to order strings similar to how filepaths are sorted by Windows Explorer.
+     * @param checkCase Should case be considered when sorting strings?
+     * @param allowNulls Should nulls be handled as legitimate strings?
+     */
+    public WindowsExplorer(boolean checkCase, boolean allowNulls){
+        super(checkCase, allowNulls);
     }
     
     @Override
