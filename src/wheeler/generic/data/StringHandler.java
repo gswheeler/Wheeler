@@ -224,20 +224,13 @@ public class StringHandler {
     }
     
     
-    // Turn an array into a parsable string
-    public static String arrayToString(String[] list, String separator){
-        if (list.length == 0) return "";
-        String str = list[0];
-        for(int i = 1; i < list.length; i++)
-            str += separator + list[i];
-        return str;
-    }
-    
-    
     // Check if an array is sorted
     public static boolean arrayIsSorted(String[] array){
+        return arrayIsSorted(array, stringSorter);
+    }
+    public static boolean arrayIsSorted(String[] array, StringSorter sorter){
         for(int i = 0; i < array.length - 1; i++){
-            if (strAafterB(array[i], array[i+1])) return false;
+            if (strAafterB(array[i], array[i+1], sorter)) return false;
         }
         return true;
     }
@@ -364,29 +357,39 @@ public class StringHandler {
     }
     
     
-    // Sort an array of strings. Use array sorting as opposed to linked list sorting to keep things quick
-    //   (possible since size is constant)
+    /**Sorts an array of strings. Uses bubble-sorting.
+     * Sorts according to the StringSorter object assigned to the stringSorter variable.
+     * @param strArray The array of strings to sort. Order and contents are not changed.
+     * @return A new array composed of the contents of the original array in sorted order.
+     */
     public static String[] sortStrings(String[] strArray){
-        // Check if it's already sorted
-        if (arrayIsSorted(strArray)) return strArray;
-        
+        return sortStrings(strArray, stringSorter);
+    }
+    /**Sorts an array of strings. Uses bubble-sorting
+     * @param strArray The array of strings to sort. Order and contents are not changed.
+     * @param sorter The StringSorter object to use when sorting the array.
+     * @return A new array composed of the contents of the original array in sorted order.
+     */
+    public static String[] sortStrings(String[] strArray, StringSorter sorter){
+        // The array we're going to be putting the strings into
         String[] result = new String[strArray.length];
         
-        // {_} <- 2 => {2}
-        // {4,_} <- 2 => {_,4} <- 2 => {2,4}
-        
+        // For each item in the original array, insert and sort
         for(int i = 0; i < strArray.length; i++){
-            // Get the insert index
-            int index = 0;
-            while (result[index] != null && strAafterB(strArray[i], result[index])) index++;
+            // Insert the next item
+            result[i] = strArray[i];
             
-            // Shift all trailing elements over
-            for (int j = i; j > index; j--) result[j] = result[j - 1];
-            
-            // Insert string
-            result[index] = strArray[i];
+            // Moving from the insertion index up to the second item,
+            // swap with the preceding item as long as the current item comes before the preceding item
+            for(int j = i; j > 0; j--){
+                // If the next item up does not come after the current item, no more swapping
+                if (!strAafterB(result[j-1], result[j], sorter)) break;
+                // The current item comes before the next item up; swap them
+                LogicHandler.swap(result, j-1, j);
+            }
         }
         
+        // Return the result
         return result;
     }
     
@@ -399,7 +402,18 @@ public class StringHandler {
      * @param strB The second string
      * @return True if the first string comes before the second, false otherwise
      */
-    public static boolean strAbeforeB(String strA, String strB){ return compareStrings(strA, strB) < 0; }
+    public static boolean strAbeforeB(String strA, String strB){
+        return strAbeforeB(strA, strB, stringSorter);
+    }
+    /**Does the first string come before the second?
+     * @param strA The first string
+     * @param strB The second string
+     * @param sorter The StringSorter object used to compare the two strings
+     * @return True if the first string comes before the second, false otherwise
+     */
+    public static boolean strAbeforeB(String strA, String strB, StringSorter sorter){
+        return compareStrings(strA, strB, sorter) < 0;
+    }
     
     /**Does the first string come after the second?
      * The comparison is made using the StringSorter object assigned to the stringSorter variable.
@@ -407,7 +421,19 @@ public class StringHandler {
      * @param strB The second string
      * @return True if the first string comes after the second, false otherwise
      */
-    public static boolean strAafterB(String strA, String strB){ return compareStrings(strA, strB) > 0; }
+    public static boolean strAafterB(String strA, String strB){
+        return strAafterB(strA, strB, stringSorter);
+    }
+    /**Does the first string come after the second?
+     * The comparison is made using the StringSorter object assigned to the stringSorter variable.
+     * @param strA The first string
+     * @param strB The second string
+     * @param sorter The StringSorter object used to compare the two strings
+     * @return True if the first string comes after the second, false otherwise
+     */
+    public static boolean strAafterB(String strA, String strB, StringSorter sorter){
+        return compareStrings(strA, strB, sorter) > 0;
+    }
     
     /**Compares two strings to determine whether the first string comes before, comes after, or coincides with the second string.
      * The comparison is made using the StringSorter object assigned to the stringSorter variable.
@@ -416,7 +442,16 @@ public class StringHandler {
      * @return -1 if the first string comes before the second, 1 if it comes after, and 0 if it coincides.
      */
     public static int compareStrings(String strA, String strB){
-        return stringSorter.compareStrings(strA, strB);
+        return compareStrings(strA, strB, stringSorter);
+    }
+    /**Compares two strings to determine whether the first string comes before, comes after, or coincides with the second string.
+     * @param strA The string against which the other string is compared.
+     * @param strB The string compared against the other other string.
+     * @param sorter The StringSorter object used to compare the two strings
+     * @return -1 if the first string comes before the second, 1 if it comes after, and 0 if it coincides.
+     */
+    public static int compareStrings(String strA, String strB, StringSorter sorter){
+        return sorter.compareStrings(strA, strB);
     }
     
     
@@ -467,7 +502,7 @@ public class StringHandler {
      * If whitespace is printed, whitespace characters will be left as they are;
      *  otherwise, they will be treated as unprintable characters.
      * If unprintable characters are escaped,
-     *  carriage returns, newlines, and tabs will be replaced with \r, \n, and \t (unless whitespace is being printed),
+     *  carriage returns, newlines, and tabs will be replaced with \r, \n, and \t respectively (unless whitespace is being printed),
      *  unprintable characters with values less than 256 will have their hexadecimal values printed as %hh,
      *  and all other unprintable characters will have their hexadecimal values printed as xhhhh;
      *  otherwise, they will all be removed from the string.
